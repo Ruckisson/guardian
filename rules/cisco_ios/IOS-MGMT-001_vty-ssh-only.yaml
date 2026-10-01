@@ -1,0 +1,19 @@
+id: IOS-MGMT-001
+title: VTY lines must accept SSH only
+severity: high
+
+match:
+  block: "^line vty "
+
+check:
+  # "none" is allowed too: no remote access at all is also safe.
+  child_must_match: "^transport input (ssh|none)$"
+
+rationale: >
+  Telnet sends usernames, passwords and the whole session in clear text.
+  A missing "transport input" line is a finding as well, because the
+  default depends on the IOS version and may permit telnet.
+
+remediation: |
+  line vty 0 15
+   transport input ssh
