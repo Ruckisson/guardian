@@ -17,3 +17,26 @@ rationale: >
 remediation: |
   line vty 0 15
    transport input ssh
+
+
+examples:
+  compliant:
+    - |
+      line vty 0 4
+       transport input ssh
+    - |
+      line vty 0 4
+       transport input none
+  non_compliant:
+    - |
+      line vty 0 4
+       transport input telnet
+    - |
+      line vty 0 4
+       transport input ssh telnet
+    - |
+      line vty 0 4
+       transport input all
+    - |
+      line vty 0 4
+       login local
