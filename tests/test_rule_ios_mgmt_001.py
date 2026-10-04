@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 
-from guardian.core.audit import run_audit
 from guardian.core.parsers.cisco_ios import parse
 from guardian.core.rules.engine import evaluate, load_rules
 
@@ -18,14 +17,18 @@ def rule():
     return next(r for r in load_rules(RULES) if r.id == "IOS-MGMT-001")
 
 
-def test_telnet_config_has_findings() -> None:
-    findings = run_audit(FIXTURES / "vty_telnet.cfg", RULES)
+def test_telnet_config_has_findings(rule) -> None:
+    config = parse((FIXTURES / "vty_telnet.cfg").read_text())
+
+    findings = evaluate(rule, config)
 
     assert {f.target for f in findings} == {"line vty 0 4", "line vty 5 15"}
 
 
-def test_ssh_config_is_compliant() -> None:
-    assert run_audit(FIXTURES / "vty_ssh.cfg", RULES) == []
+def test_ssh_config_is_compliant(rule) -> None:
+    config = parse((FIXTURES / "vty_ssh.cfg").read_text())
+
+    assert evaluate(rule, config) == []
 
 
 @pytest.mark.parametrize(

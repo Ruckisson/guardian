@@ -1,0 +1,23 @@
+id: IOS-MGMT-002
+title: VTY lines must restrict source addresses with an access-class
+severity: medium
+
+match:
+  block: "^line vty "
+
+check:
+  # Inbound only; "out" limits onward sessions from the switch, not logins to it.
+  child_must_match: "^access-class \\S+ in( vrf-also)?$"
+
+rationale: >
+  Without an inbound access-class, anyone who can reach the management
+  address may attempt to log in, for example by guessing passwords.
+  Limiting VTY access to the management network reduces the exposure
+  even when SSH and strong credentials are in place.
+
+remediation: |
+  ip access-list standard MGMT-ACCESS
+   permit <management-network> <wildcard>
+   deny   any log
+  line vty 0 15
+   access-class MGMT-ACCESS in
