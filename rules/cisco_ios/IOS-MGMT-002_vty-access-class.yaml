@@ -21,3 +21,26 @@ remediation: |
    deny   any log
   line vty 0 15
    access-class MGMT-ACCESS in
+
+
+examples:
+  compliant:
+    - |
+      line vty 0 4
+       access-class MGMT-ACCESS in
+    - |
+      line vty 0 4
+       access-class 10 in
+    - |
+      line vty 0 4
+       access-class MGMT-ACCESS in vrf-also
+    - |
+      line con 0
+       logging synchronous
+  non_compliant:
+    - |
+      line vty 0 4
+       access-class MGMT-ACCESS out
+    - |
+      line vty 0 4
+       transport input ssh
