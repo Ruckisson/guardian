@@ -20,8 +20,6 @@ classifiers = [
 dependencies = [
     "typer>=0.12",
     "pyyaml>=6.0",
-    "typer>=0.12",
-    "pyyaml>=6.0",
     "rich>=13.0",
 ]
 
@@ -36,6 +34,10 @@ guardian = "guardian.cli.main:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+# Bundled rule sets ship inside the package, so "guardian audit" works from any folder.
+guardian = ["rulesets/*/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

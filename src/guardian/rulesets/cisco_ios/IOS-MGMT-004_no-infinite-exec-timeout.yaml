@@ -1,0 +1,40 @@
+id: IOS-MGMT-004
+title: Console and VTY sessions must not have timeouts disabled
+severity: medium
+
+scope:
+  path: "^line (con|vty) "
+
+check:
+  # "exec-timeout 0 0" (or "0") means the session never times out.
+  must_not_exist: "^exec-timeout 0( 0)?$"
+
+rationale: >
+  A session that never times out stays logged in when an administrator
+  walks away or loses the connection, and anyone who reaches that terminal
+  inherits the privileges.
+
+remediation: |
+  line con 0
+   exec-timeout 5 0
+  line vty 0 15
+   exec-timeout 5 0
+
+examples:
+  compliant:
+    - |
+      line con 0
+       exec-timeout 5 0
+    - |
+      line vty 0 4
+       exec-timeout 0 30
+    - |
+      line vty 0 4
+       transport input ssh
+  non_compliant:
+    - |
+      line con 0
+       exec-timeout 0 0
+    - |
+      line vty 5 15
+       exec-timeout 0

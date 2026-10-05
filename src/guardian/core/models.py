@@ -20,6 +20,11 @@ class Severity(StrEnum):
     HIGH = "high"
     CRITICAL = "critical"
 
+    @property
+    def rank(self) -> int:
+        """Numeric order for sorting: low = 0 ... critical = 3."""
+        return list(Severity).index(self)
+
 
 @dataclass(frozen=True)
 class Finding:

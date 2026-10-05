@@ -2,12 +2,12 @@ id: IOS-MGMT-001
 title: VTY lines must accept SSH only
 severity: high
 
-match:
-  block: "^line vty "
+scope:
+  path: "^line vty "
 
 check:
   # "none" is allowed too: no remote access at all is also safe.
-  child_must_match: "^transport input (ssh|none)$"
+  must_exist: "^transport input (ssh|none)$"
 
 rationale: >
   Telnet sends usernames, passwords and the whole session in clear text.
@@ -17,7 +17,6 @@ rationale: >
 remediation: |
   line vty 0 15
    transport input ssh
-
 
 examples:
   compliant:

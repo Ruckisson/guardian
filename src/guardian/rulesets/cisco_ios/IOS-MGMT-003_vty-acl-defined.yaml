@@ -1,0 +1,57 @@
+id: IOS-MGMT-003
+title: ACL used by a VTY access-class must be defined
+severity: medium
+
+scope:
+  path: "^line vty "
+
+check:
+  reference:
+    capture: "^access-class (?P<acl>\\S+) in( vrf-also)?$"
+    # Named ACLs, numbered ACLs shown in the new style, and classic numbered ACLs.
+    must_exist: "^(ip access-list (standard|extended) {acl}$|access-list {acl} )"
+
+rationale: >
+  An access-class that names an ACL which does not exist looks protective
+  in the configuration but may not restrict anything: on IOS an undefined
+  access list generally permits all traffic. This rule complements
+  IOS-MGMT-002, which only checks that an access-class is present.
+
+remediation: |
+  Define the ACL that the access-class refers to, or correct its name:
+  ip access-list standard MGMT-ACCESS
+   permit <management-network> <wildcard>
+   deny   any log
+
+examples:
+  compliant:
+    - |
+      ip access-list standard MGMT-ACCESS
+       permit 172.16.1.0 0.0.0.255
+      line vty 0 4
+       access-class MGMT-ACCESS in
+    - |
+      access-list 10 permit 172.16.1.0 0.0.0.255
+      line vty 0 4
+       access-class 10 in
+    - |
+      ip access-list standard 10
+       permit 172.16.1.0 0.0.0.255
+      line vty 0 4
+       access-class 10 in
+    - |
+      line vty 0 4
+       transport input ssh
+  non_compliant:
+    - |
+      line vty 0 4
+       access-class MGMT-ACCESS in
+    - |
+      ip access-list standard MGMT
+       permit 172.16.1.0 0.0.0.255
+      line vty 0 4
+       access-class MGMT-ACCESS in
+    - |
+      access-list 100 permit ip any any
+      line vty 0 4
+       access-class 10 in

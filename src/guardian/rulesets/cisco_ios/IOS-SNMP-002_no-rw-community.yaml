@@ -1,0 +1,30 @@
+id: IOS-SNMP-002
+title: SNMP communities must be read-only
+severity: high
+
+scope: global
+
+check:
+  must_not_exist: "^snmp-server community \\S+ (view \\S+ )?RW( |$)"
+
+rationale: >
+  A read-write community lets anyone who knows it change the device
+  configuration over SNMP, bypassing login, AAA and command logging.
+  SNMPv1/v2c also send the community in clear text.
+
+remediation: |
+  Replace the RW community with a read-only one, or remove it:
+  no snmp-server community <community>
+  snmp-server community <long-random-community> RO <acl>
+
+examples:
+  compliant:
+    - |
+      snmp-server community Xq7-lab-monitoring RO 10
+    - |
+      snmp-server community Xq7-lab-monitoring view LIMITED RO 10
+  non_compliant:
+    - |
+      snmp-server community Xq7-lab-write RW
+    - |
+      snmp-server community Xq7-lab-write view ALL RW 10

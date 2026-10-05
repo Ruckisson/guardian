@@ -1,0 +1,50 @@
+id: IOS-L2-001
+title: Active access ports must have port security enabled
+severity: medium
+
+scope:
+  path: "^interface "
+  has_child: "^switchport mode access$"
+  not_has_child: "^shutdown$"
+
+check:
+  must_exist: "^switchport port-security$"
+
+rationale: >
+  Port security limits how many MAC addresses a port accepts. It stops MAC
+  flooding of the switch table and makes it harder to plug an unknown
+  switch or device into an office port. Trunks, shut-down ports and ports
+  without an explicit access mode are out of scope for this rule.
+
+remediation: |
+  interface <access-port>
+   switchport port-security maximum 2
+   switchport port-security violation restrict
+   switchport port-security
+
+examples:
+  compliant:
+    - |
+      interface Ethernet0/1
+       switchport mode access
+       switchport port-security maximum 2
+       switchport port-security
+    - |
+      interface Ethernet0/2
+       switchport mode access
+       shutdown
+    - |
+      interface Ethernet0/0
+       switchport trunk encapsulation dot1q
+       switchport mode trunk
+    - |
+      interface Vlan99
+       ip address 172.16.1.2 255.255.255.0
+  non_compliant:
+    - |
+      interface Ethernet0/1
+       switchport mode access
+    - |
+      interface Ethernet0/1
+       switchport mode access
+       switchport port-security maximum 2
