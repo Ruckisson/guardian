@@ -1,0 +1,30 @@
+id: IOS-LOG-001
+title: Log messages must carry date and time stamps
+severity: low
+
+scope: global
+
+check:
+  must_exist: "^service timestamps log datetime( |$)"
+
+rationale: >
+  Without date and time stamps, log messages from several devices cannot be
+  put in order, which makes troubleshooting and incident investigation
+  much harder. Uptime-based stamps are not enough after a reload.
+
+remediation: |
+  service timestamps log datetime msec localtime show-timezone
+
+examples:
+  compliant:
+    - |
+      service timestamps log datetime msec
+    - |
+      service timestamps log datetime msec localtime show-timezone
+  non_compliant:
+    - |
+      service timestamps log uptime
+    - |
+      no service timestamps log
+    - |
+      hostname SW1

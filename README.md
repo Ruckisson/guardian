@@ -2,8 +2,26 @@
 
 Network configuration backup, compliance auditing and drift tracking.
 
-> **Status: early development (pre-v0.1).** Only the project skeleton exists so far.
-> This README lists only what actually works; planned features are marked as such.
+> **Status: early development (pre-v0.1).** Auditing a Cisco IOS config file works;
+> collection, backups, drift and reports are planned. This README lists only what
+> actually works; planned features are marked as such.
+
+## What works today
+
+- Audit a Cisco IOS / IOS-XE `show running-config` saved to a file.
+- 11 bundled rules: SSH-only and ACL-restricted VTY access, session timeouts,
+  SNMP communities and SNMPv3, port security on access ports, log timestamps.
+- Rules are YAML data with a validated schema; the engine supports global and
+  nested block scopes, block filters, required/forbidden lines, per-line checks,
+  numeric limits with platform defaults and cross-references (e.g. ACL defined).
+- Secrets in findings (SNMP communities, passwords, keys) are redacted.
+- Exit code 0 = compliant, 1 = findings, 2 = Guardian could not run.
+
+```bash
+guardian rules                              # list bundled rules
+guardian audit running-config.txt           # audit a config file
+guardian audit running-config.txt --rules ./my-rules
+```
 
 ## What it will do
 
@@ -18,7 +36,7 @@ Network configuration backup, compliance auditing and drift tracking.
 
 | Version | Scope | Status |
 | --- | --- | --- |
-| v0.1 | Cisco IOS config from file, 15–20 rules, HTML/JSON report | planned |
+| v0.1 | Cisco IOS config from file, 15–20 rules, HTML/JSON report | in progress (engine + 11 rules done, reports planned) |
 | v0.2 | SSH collection (Netmiko), git backup, `collect` command | planned |
 | v0.3 | Scheduler with separate backup/compliance intervals, compliance drift | planned |
 | v0.4 | Waivers, MikroTik plugin | planned |
@@ -29,15 +47,16 @@ Network configuration backup, compliance auditing and drift tracking.
 ```
 src/guardian/
 ├── cli/            # thin command-line layer, no business logic
-└── core/           # UI-independent core (reusable by a future GUI/web)
-    ├── inventory/  # devices from YAML
-    ├── collectors/ # per-vendor config collection
-    ├── parsers/    # per-vendor config parsing
-    ├── rules/      # data-driven rule engine
-    ├── storage/    # git backups + SQLite history
-    ├── reporting/  # HTML / JSON output
-    └── scheduler/  # backup and compliance intervals
-rules/              # rule definitions (YAML), one directory per platform
+├── core/           # UI-independent core (reusable by a future GUI/web)
+│   ├── models.py   # ConfigLine, Severity, Finding
+│   ├── platforms.py  # platform -> parser + rule set
+│   ├── audit.py    # pipeline: parse -> load rules -> evaluate
+│   ├── redact.py   # masks secrets in findings
+│   ├── parsers/    # per-syntax config parsers (cisco.py)
+│   ├── rules/      # rule model, loader/validator, engine, custom checks
+│   └── inventory/ collectors/ storage/ reporting/ scheduler/   # planned
+└── rulesets/       # rule definitions (YAML), one directory per platform
+docs/               # adding-rules.md: rule format reference
 tests/              # pytest suite and sample configs
 ```
 

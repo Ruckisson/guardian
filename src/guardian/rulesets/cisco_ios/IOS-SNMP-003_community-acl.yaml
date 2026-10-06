@@ -1,0 +1,41 @@
+id: IOS-SNMP-003
+title: Every SNMP community must be limited by an ACL
+severity: medium
+
+scope: global
+
+check:
+  each_must_match:
+    select: "^snmp-server community "
+    # After RO/RW (and an optional IPv6 ACL) an IPv4 ACL name or number must follow.
+    pattern: "^snmp-server community \\S+ (view \\S+ )?(RO|RW) (ipv6 \\S+ )?\\S+$"
+
+rationale: >
+  Without an ACL the device answers SNMP requests from any address. An ACL
+  limits SNMP to the monitoring systems, so a leaked or guessed community
+  is much less useful.
+
+remediation: |
+  ip access-list standard SNMP-ACCESS
+   permit <monitoring-server>
+   deny   any log
+  snmp-server community <community> RO SNMP-ACCESS
+
+examples:
+  compliant:
+    - |
+      snmp-server community Xq7-lab-monitoring RO 10
+    - |
+      snmp-server community Xq7-lab-monitoring RO SNMP-ACCESS
+    - |
+      snmp-server community Xq7-lab-monitoring view LIMITED RO SNMP-ACCESS
+    - |
+      hostname SW1
+  non_compliant:
+    - |
+      snmp-server community Xq7-lab-monitoring RO
+    - |
+      snmp-server community Xq7-lab-monitoring view LIMITED RO
+    - |
+      snmp-server community Xq7-lab-monitoring RO 10
+      snmp-server community Xq7-lab-other RO

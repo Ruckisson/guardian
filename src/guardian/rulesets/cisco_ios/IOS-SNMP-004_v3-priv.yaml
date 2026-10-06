@@ -1,0 +1,29 @@
+id: IOS-SNMP-004
+title: SNMPv3 groups must use authentication and encryption (priv)
+severity: medium
+
+scope: global
+
+check:
+  must_not_exist: "^snmp-server group \\S+ v3 (noauth|auth)( |$)"
+
+rationale: >
+  SNMPv3 "noauth" accepts requests without a password and "auth" verifies
+  the user but sends all data in clear text. Only "priv" provides both
+  authentication and encryption.
+
+remediation: |
+  snmp-server group <group> v3 priv
+  Recreate the users of the group with auth and priv passwords.
+
+examples:
+  compliant:
+    - |
+      snmp-server group ADMINS v3 priv
+    - |
+      snmp-server group ADMINS v3 priv access 10
+  non_compliant:
+    - |
+      snmp-server group LEGACY v3 noauth
+    - |
+      snmp-server group MONITOR v3 auth read MONVIEW

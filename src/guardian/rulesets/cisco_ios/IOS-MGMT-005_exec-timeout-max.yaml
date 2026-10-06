@@ -1,0 +1,40 @@
+id: IOS-MGMT-005
+title: Console and VTY session timeouts must be 10 minutes or less
+severity: low
+
+scope:
+  path: "^line (con|vty) "
+
+check:
+  value:
+    pattern: "^exec-timeout (\\d+)"   # minutes
+    max: 10
+    # IOS default is 10 minutes, so a missing line is compliant.
+    if_missing: pass
+
+rationale: >
+  Long idle timeouts keep unattended sessions open for longer than needed.
+  Ten minutes matches the IOS default and is a common upper limit.
+
+remediation: |
+  line vty 0 15
+   exec-timeout 5 0
+
+examples:
+  compliant:
+    - |
+      line vty 0 4
+       exec-timeout 10 0
+    - |
+      line con 0
+       exec-timeout 5 0
+    - |
+      line vty 0 4
+       transport input ssh
+  non_compliant:
+    - |
+      line vty 0 4
+       exec-timeout 30 0
+    - |
+      line con 0
+       exec-timeout 60

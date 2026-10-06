@@ -1,0 +1,35 @@
+id: IOS-SNMP-001
+title: SNMP must not use the default communities public or private
+severity: high
+
+scope: global
+
+check:
+  must_not_exist: "^snmp-server community (?i:public|private)( |$)"
+
+rationale: >
+  "public" and "private" are the first community strings every scanner
+  tries. With them anyone who can reach the device over SNMP can read its
+  configuration details, and with write access change them.
+
+remediation: |
+  no snmp-server community public
+  no snmp-server community private
+  Prefer SNMPv3 with authentication and encryption, or use a long random
+  community limited by an ACL.
+
+examples:
+  compliant:
+    - |
+      snmp-server community Xq7-lab-monitoring RO 10
+    - |
+      snmp-server group ADMINS v3 priv
+    - |
+      hostname SW1
+  non_compliant:
+    - |
+      snmp-server community public RO
+    - |
+      snmp-server community private RW
+    - |
+      snmp-server community Public RO 10
