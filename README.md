@@ -9,7 +9,7 @@ Network configuration backup, compliance auditing and drift tracking.
 ## What works today
 
 - Audit a Cisco IOS / IOS-XE `show running-config` saved to a file.
-- 11 bundled rules: SSH-only and ACL-restricted VTY access, session timeouts,
+- 12 bundled rules: SSH-only and ACL-restricted VTY access, session timeouts,
   SNMP communities and SNMPv3, port security on access ports, log timestamps.
 - Rules are YAML data with a validated schema; the engine supports global and
   nested block scopes, block filters, required/forbidden lines, per-line checks,

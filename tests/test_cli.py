@@ -21,7 +21,7 @@ def test_audit_with_findings_exits_one_and_sorts_by_severity() -> None:
     result = runner.invoke(app, ["audit", str(FIXTURES / "insecure_switch.cfg")])
 
     assert result.exit_code == EXIT_FINDINGS
-    assert "15 finding(s)" in result.output
+    assert "16 finding(s)" in result.output
     assert result.output.index("HIGH") < result.output.index("MEDIUM") < result.output.index("LOW")
     assert "Xq7-lab-write" not in result.output
 
@@ -63,4 +63,4 @@ def test_rules_lists_bundled_rules() -> None:
 
     assert result.exit_code == 0
     assert "IOS-SNMP-001" in result.output
-    assert "11 rule(s)" in result.output
+    assert "12 rule(s)" in result.output

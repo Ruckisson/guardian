@@ -8,7 +8,8 @@ check:
   must_not_exist: "^ip http server$"
 
 rationale: >
-  The HTTP server is not secure and should not be used. Use HTTPS instead.
+  The HTTP server is not secure and should not be used. HTTP sends everything, login details included, via plaintext. Use HTTPS instead, if it is not needed,
+  disable both.
 
 remediation: |
   no ip http server
