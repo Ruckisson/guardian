@@ -1,0 +1,27 @@
+id: IOS-MGMT-006
+title: HTTP server must be disabled, use HTTPS instead
+severity: high
+
+scope: global
+
+check:
+  must_not_exist: "^ip http server$"
+
+rationale: >
+  The HTTP server is not secure and should not be used. HTTP sends everything, login details included, via plaintext. Use HTTPS instead, if it is not needed,
+  disable both.
+
+remediation: |
+  no ip http server
+
+examples:
+  compliant:
+    - |
+      ip http secure-server
+    - |
+      no ip http server
+    - |
+      ip http authentication local
+  non_compliant:
+    - |
+      ip http server
