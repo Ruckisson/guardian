@@ -3,7 +3,7 @@
 Compliance auditing for network device configurations. Backups and drift
 tracking are planned.
 
-I work as a NOC operator and I'm moving towards network security. Guardian is
+I'm moving towards network security from NOC background. Guardian is
 my learning and portfolio project. It's in early development: right now it
 audits a saved Cisco IOS config against a set of rules. Everything else in the
 roadmap is planned and not done yet.
