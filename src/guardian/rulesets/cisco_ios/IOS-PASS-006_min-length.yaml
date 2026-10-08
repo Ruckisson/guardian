@@ -1,0 +1,37 @@
+id: IOS-PASS-006
+title: Minimum password length must be at least 8 characters
+severity: medium
+
+scope: global
+
+check:
+  # "security passwords min-length" must be 8 or more. Fails only when all
+  # passwords are hashed; with clear text or type 7 passwords IOS-PASS-007
+  # reports the same problem as high instead.
+  python: password-min-length-hashed
+
+rationale: >
+  Short passwords can be guessed or brute forced quickly. This command makes
+  IOS refuse new enable, user and line passwords shorter than the limit.
+  Without it IOS accepts any length, even a single character. Here the
+  passwords are at least stored as one-way hashes, so the risk is medium.
+
+remediation: |
+  security passwords min-length 12
+
+examples:
+  compliant:
+    - |
+      security passwords min-length 8
+      enable secret 9 $9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM
+    - |
+      security passwords min-length 14
+    - |
+      enable password Cisco123
+  non_compliant:
+    - |
+      security passwords min-length 6
+      enable secret 9 $9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM
+    - |
+      hostname SW1
+      username admin privilege 15 secret 9 $9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM

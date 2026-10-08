@@ -1,0 +1,39 @@
+id: IOS-LOG-003
+title: Configuration changes must be logged
+severity: medium
+
+scope: global
+
+check:
+  # archive > log config > logging enable
+  python: config-change-logging
+
+rationale: >
+  Without the configuration change logger nobody can say later who changed
+  what and when. With "notify syslog" each change also goes to the syslog
+  server.
+
+remediation: |
+  archive
+   log config
+    logging enable
+    hidekeys
+    notify syslog contenttype plaintext
+
+examples:
+  compliant:
+    - |
+      archive
+       log config
+        logging enable
+        hidekeys
+  non_compliant:
+    - |
+      archive
+       path flash:backup
+    - |
+      archive
+       log config
+        hidekeys
+    - |
+      hostname R1

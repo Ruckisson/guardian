@@ -1,0 +1,24 @@
+id: IOS-PASS-010
+title: Login attempts must be rate limited with login block-for
+severity: medium
+
+scope: global
+
+check:
+  must_exist: "^login block-for \\d+ attempts \\d+ within \\d+"
+
+rationale: >
+  After the given number of failed logins IOS refuses new logins for a while
+  ("quiet period"). Password guessing over SSH or Telnet becomes very slow.
+
+remediation: |
+  login block-for 120 attempts 3 within 60
+  login quiet-mode access-class MGMT-ACCESS
+
+examples:
+  compliant:
+    - |
+      login block-for 120 attempts 3 within 60
+  non_compliant:
+    - |
+      hostname SW1

@@ -1,0 +1,37 @@
+id: IOS-MGMT-009
+title: AUX and TTY lines must not accept incoming connections
+severity: low
+
+scope:
+  path: "^line (aux|tty) "
+
+check:
+  must_exist: "^transport input none$"
+
+rationale: >
+  AUX and async TTY lines can accept reverse Telnet or SSH connections and
+  pass them to whatever is connected to the line. They are not meant for
+  management access.
+
+remediation: |
+  line aux 0
+   transport input none
+  line tty 1 16
+   transport input none
+
+examples:
+  compliant:
+    - |
+      line aux 0
+       no exec
+       transport input none
+    - |
+      line tty 1 16
+       transport input none
+  non_compliant:
+    - |
+      line aux 0
+       no exec
+    - |
+      line tty 1 16
+       transport input telnet

@@ -1,0 +1,31 @@
+id: IOS-SVC-001
+title: TCP and UDP small servers must be disabled
+severity: medium
+
+scope: global
+
+check:
+  # Off by default since IOS 12.0, so look for them being turned on.
+  must_not_exist: "^service (tcp|udp)-small-servers"
+
+rationale: >
+  The small servers (echo, chargen, discard, daytime) have no use on a
+  network device. UDP echo and chargen can be abused for reflection and
+  amplification attacks.
+
+remediation: |
+  no service tcp-small-servers
+  no service udp-small-servers
+
+examples:
+  compliant:
+    - |
+      no service tcp-small-servers
+      no service udp-small-servers
+    - |
+      hostname R1
+  non_compliant:
+    - |
+      service tcp-small-servers
+    - |
+      service udp-small-servers

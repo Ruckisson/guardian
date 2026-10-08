@@ -1,0 +1,68 @@
+id: IOS-MGMT-010
+title: Console and VTY lines must require login
+severity: high
+
+scope:
+  path: "^line (con|vty) "
+
+check:
+  # Without AAA: "login" or "login local". With "aaa new-model": the line's
+  # "login authentication <list>", else the default list; the list must be
+  # defined and must not contain "none". Without any default list VTY lines
+  # use local users, the console has no login at all.
+  python: line-requires-login
+
+rationale: >
+  Without a login requirement the console gives a prompt to anyone who plugs
+  in a cable. With "aaa new-model" the line "login" commands no longer
+  apply, so a login method list must cover the line. A method list with
+  "none" lets anyone in, either always or whenever the TACACS+/RADIUS
+  server is unreachable.
+
+remediation: |
+  aaa new-model
+  aaa authentication login default local
+  line con 0
+   login authentication default
+
+examples:
+  compliant:
+    - |
+      line vty 0 4
+       login local
+    - |
+      aaa new-model
+      aaa authentication login default local
+      line con 0
+       logging synchronous
+    - |
+      aaa new-model
+      aaa authentication login CONSOLE local
+      line con 0
+       login authentication CONSOLE
+    - |
+      aaa new-model
+      username admin privilege 15 secret 9 $9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM
+      line vty 0 4
+       transport input ssh
+  non_compliant:
+    - |
+      line con 0
+       logging synchronous
+    - |
+      aaa new-model
+      line vty 0 4
+       login local
+    - |
+      aaa new-model
+      aaa authentication login default none
+      line con 0
+    - |
+      aaa new-model
+      aaa authentication login default group tacacs+ none
+      line vty 0 4
+    - |
+      aaa new-model
+      aaa authentication login default local
+      line vty 0 4
+       login authentication UNDEFINED

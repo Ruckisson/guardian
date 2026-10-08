@@ -1,0 +1,29 @@
+id: IOS-SVC-003
+title: Loading configuration from the network at boot must be disabled
+severity: medium
+
+scope: global
+
+check:
+  must_not_exist: "^(service config$|boot network )"
+
+rationale: >
+  With "service config" the device tries to download its configuration over
+  TFTP when it boots. Anyone who answers on the network can feed it a config
+  of their choice.
+
+remediation: |
+  no service config
+  no boot network <url>
+
+examples:
+  compliant:
+    - |
+      no service config
+    - |
+      hostname R1
+  non_compliant:
+    - |
+      service config
+    - |
+      boot network tftp://10.0.0.5/r1-confg

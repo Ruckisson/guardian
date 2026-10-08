@@ -1,0 +1,35 @@
+id: IOS-PASS-011
+title: Local accounts must lock after 5 or fewer failed logins
+severity: low
+
+scope: global
+
+check:
+  # "aaa local authentication attempts max-fail" must be 5 or less (IOS
+  # default: no limit). Without "aaa new-model" the command does not exist,
+  # so the rule does not apply; IOS-AAA-001 reports the missing AAA.
+  python: local-max-fail
+
+rationale: >
+  Locks a local account after the given number of failed logins in a row, so
+  a password cannot be guessed against one user. Privilege 15 accounts are
+  never locked, so an administrator cannot lock everyone out. Needs
+  "aaa new-model". Some guides ask for 3.
+
+remediation: |
+  aaa new-model
+  aaa local authentication attempts max-fail 3
+
+examples:
+  compliant:
+    - |
+      aaa new-model
+      aaa local authentication attempts max-fail 3
+    - |
+      no aaa new-model
+  non_compliant:
+    - |
+      aaa new-model
+      aaa local authentication attempts max-fail 10
+    - |
+      aaa new-model

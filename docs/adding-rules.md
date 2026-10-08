@@ -12,6 +12,8 @@ Answer these before writing anything:
 3. **What** must be true? Pick a check type and write the exact regex.
 4. **ID and severity.** Format `<PLATFORM>-<AREA>-<NNN>`, e.g. `IOS-SNMP-001`;
    the ID never changes once published.
+   `guardian rules` groups rules by AREA. When you start a new area, add a short
+   description for it to `AREA_DESCRIPTIONS` in `src/guardian/core/rules/model.py`.
 5. **Why and how to fix**, in your own words. Do not copy benchmark text.
 
 One rule checks one thing.

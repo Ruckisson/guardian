@@ -1,0 +1,32 @@
+id: IOS-SVC-006
+title: Smart Install must be disabled on switches
+severity: high
+
+scope: global
+
+check:
+  # Passes on routers (no switchport interfaces), where Smart Install does
+  # not exist. When enabled, IOS shows nothing, so look for "no vstack".
+  python: smart-install-disabled
+
+rationale: >
+  The Smart Install client listens on TCP 4786 without authentication. It has
+  been widely abused (CVE-2018-0171) to read and replace configurations and
+  to run code on switches.
+
+remediation: |
+  no vstack
+
+examples:
+  compliant:
+    - |
+      no vstack
+      interface GigabitEthernet1/0/1
+       switchport mode access
+    - |
+      interface GigabitEthernet0/0
+       ip address 10.0.0.1 255.255.255.0
+  non_compliant:
+    - |
+      interface GigabitEthernet1/0/1
+       switchport mode access

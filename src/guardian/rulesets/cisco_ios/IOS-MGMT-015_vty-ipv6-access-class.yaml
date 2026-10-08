@@ -1,0 +1,47 @@
+id: IOS-MGMT-015
+title: VTY lines must restrict IPv6 sources when IPv6 is enabled
+severity: medium
+
+scope:
+  path: "^line vty "
+
+check:
+  # Applies only when an interface has an IPv6 address ("ipv6 address" or
+  # "ipv6 enable"); then every VTY line needs "ipv6 access-class <acl> in".
+  python: vty-ipv6-access-class
+
+rationale: >
+  "access-class" filters only IPv4. As soon as an interface has an IPv6
+  address, the VTY lines are reachable over IPv6 from anywhere, and the
+  IPv4 ACL from IOS-MGMT-002 does not help.
+
+remediation: |
+  ipv6 access-list MGMT-ACCESS-V6
+   permit ipv6 2001:db8:99::/64 any
+  line vty 0 15
+   ipv6 access-class MGMT-ACCESS-V6 in
+
+examples:
+  compliant:
+    - |
+      interface Vlan99
+       ip address 172.16.1.2 255.255.255.0
+      line vty 0 4
+       access-class MGMT-ACCESS in
+    - |
+      interface Vlan99
+       ipv6 address 2001:db8:99::2/64
+      line vty 0 4
+       access-class MGMT-ACCESS in
+       ipv6 access-class MGMT-ACCESS-V6 in
+  non_compliant:
+    - |
+      interface Vlan99
+       ipv6 address 2001:db8:99::2/64
+      line vty 0 4
+       access-class MGMT-ACCESS in
+    - |
+      interface GigabitEthernet0/0
+       ipv6 enable
+      line vty 0 4
+       transport input ssh

@@ -1,16 +1,21 @@
 """Guardian CLI entry point."""
 
+from collections import Counter
+from itertools import groupby
 from pathlib import Path
 from typing import Annotated, NoReturn
 
 import typer
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 from guardian import __version__
 from guardian.core.audit import run_audit
+from guardian.core.models import Severity
 from guardian.core.platforms import DEFAULT_PLATFORM, UnknownPlatformError, get_platform
 from guardian.core.rules.loader import RuleLoadError, load_rules
+from guardian.core.rules.model import AREA_DESCRIPTIONS
 
 console = Console()
 errors = Console(stderr=True)
@@ -77,18 +82,30 @@ def audit(
 
     findings.sort(key=lambda f: (-f.severity.rank, f.rule_id, f.target))
 
-    table = Table(title=f"Audit: {config.name}")
-    table.add_column("Severity")
-    table.add_column("Rule")
-    table.add_column("Target")
-    table.add_column("Finding")
+    # One block per rule: severity, id and title once, then every place in the
+    # config that fails it. A borderless grid keeps wrapped text in its column.
+    console.print(f"[bold]Audit: {config.name}[/]\n")
+    grid = Table.grid(padding=(0, 2))
+    grid.add_column(no_wrap=True)
+    grid.add_column(no_wrap=True)
+    grid.add_column()
+    for rule_id, group in groupby(findings, key=lambda f: f.rule_id):
+        group = list(group)
+        severity = group[0].severity
+        style = SEVERITY_STYLE[severity]
+        grid.add_row(f"[{style}]{severity.upper()}[/]", rule_id, f"[bold]{group[0].message}[/]")
+        for f in group:
+            grid.add_row("", "", Text(f"→ {f.target}", style="dim"))
+        grid.add_row("", "", "")
+    console.print(grid)
 
-    for f in findings:
-        style = SEVERITY_STYLE[f.severity]
-        table.add_row(f"[{style}]{f.severity.upper()}[/]", f.rule_id, f.target, f.message)
-
-    console.print(table)
-    console.print(f"[bold red]✘ {len(findings)} finding(s).[/]")
+    counts = Counter(f.severity for f in findings)
+    by_severity = ", ".join(
+        f"[{SEVERITY_STYLE[s]}]{counts[s]} {s}[/]" for s in reversed(Severity) if counts[s]
+    )
+    rules_hit = len({f.rule_id for f in findings})
+    summary = f"[bold red]✘ {len(findings)} finding(s)[/] in {rules_hit} rule(s)"
+    console.print(f"{summary}: {by_severity}")
     raise typer.Exit(code=EXIT_FINDINGS)
 
 
@@ -103,14 +120,23 @@ def list_rules(
     except (UnknownPlatformError, RuleLoadError) as exc:
         _fail(exc)
 
-    table = Table(title=f"Rules: {platform if rules is None else rules}")
-    table.add_column("Rule")
-    table.add_column("Severity")
-    table.add_column("Title")
-    for rule in loaded:
-        style = SEVERITY_STYLE[rule.severity]
-        table.add_row(rule.id, f"[{style}]{rule.severity}[/]", rule.title)
-    console.print(table)
+    console.print(f"[bold]Rules: {platform if rules is None else rules}[/]")
+
+    # One table per area (L2, LOG, MGMT, ...), most severe rules first.
+    loaded.sort(key=lambda r: (r.area, -r.severity.rank, r.id))
+    title_width = max((len(r.title) for r in loaded), default=0)  # same width in every table
+    for area, group in groupby(loaded, key=lambda r: r.area):
+        description = AREA_DESCRIPTIONS.get(area)
+        title = f"{area}: {description}" if description else area
+        table = Table(title=title, title_justify="left", title_style="bold")
+        table.add_column("Rule", min_width=12)
+        table.add_column("Severity", min_width=8)
+        table.add_column("Title", min_width=title_width)
+        for rule in group:
+            style = SEVERITY_STYLE[rule.severity]
+            table.add_row(rule.id, f"[{style}]{rule.severity}[/]", rule.title)
+        console.print(table)
+
     console.print(f"{len(loaded)} rule(s).")
 
 

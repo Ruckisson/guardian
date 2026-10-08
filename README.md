@@ -1,62 +1,135 @@
 # Guardian
 
-Network configuration backup, compliance auditing and drift tracking.
+Compliance auditing for network device configurations. Backups and drift
+tracking are planned.
 
-> **Status: early development (pre-v0.1).** Auditing a Cisco IOS config file works;
-> collection, backups, drift and reports are planned. This README lists only what
-> actually works; planned features are marked as such.
+I'm moving towards network security from NOC background. Guardian is
+my learning and portfolio project. It's in early development: right now it
+audits a saved Cisco IOS config against a set of rules. Everything else in the
+roadmap is planned and not done yet.
 
 ## What works today
 
-- Audit a Cisco IOS / IOS-XE `show running-config` saved to a file.
-- 12 bundled rules: SSH-only and ACL-restricted VTY access, session timeouts,
-  SNMP communities and SNMPv3, port security on access ports, log timestamps.
-- Rules are YAML data with a validated schema; the engine supports global and
-  nested block scopes, block filters, required/forbidden lines, per-line checks,
-  numeric limits with platform defaults and cross-references (e.g. ACL defined).
-- Secrets in findings (SNMP communities, passwords, keys) are redacted.
-- Exit code 0 = compliant, 1 = findings, 2 = Guardian could not run.
+- Auditing a Cisco IOS / IOS-XE `show running-config` saved to a file.
+- 60 rules in 9 areas, listed below: passwords, management access, AAA, SNMP,
+  unneeded services, interfaces, layer 2, logging and NTP.
+- Rules are plain YAML files. The loader validates every rule and refuses a
+  broken one instead of skipping it, so a typo can't turn into a rule that
+  checks nothing.
+- Supported checks:
+  - a line must exist / must not exist
+  - every matching line must also match a pattern
+  - a number must be within limits
+  - a reference must be defined (e.g. the ACL used by a VTY line has to exist)
+  - a custom Python check, for cases YAML can't express
+- Rules that only make sense when a feature is configured (HTTPS server,
+  HSRP/VRRP, NTP, IPv6, switch-only features) don't report anything when the
+  feature isn't there.
+- Passwords, SNMP communities, keys and credentials in URLs are masked in the
+  output.
+- `guardian audit` groups findings by rule, most severe first: each rule once
+  with its title, every failing place in the config below it, and a summary
+  per severity. `guardian rules` lists the rules grouped by area.
+- Exit codes: 0 compliant, 1 findings, 2 Guardian couldn't run (missing file,
+  broken rule). This makes it usable in scripts and CI.
 
 ```bash
-guardian rules                              # list bundled rules
-guardian audit running-config.txt           # audit a config file
-guardian audit running-config.txt --rules ./my-rules
+guardian rules                                       # list rules
+guardian audit running-config.txt                    # audit a config file
+guardian audit running-config.txt --rules ./my-rules # use your own rules
 ```
 
-## What it will do
+## Rules
 
-- Collect running configs from network devices and back them up to git.
-- Audit configs against data-defined compliance rules, one rule set per platform.
-- Track **compliance drift**: which findings appeared or disappeared between runs.
-- Support **waivers** (accepted risk with reason, owner and expiry), so reports split into
-  *fix*, *accepted* and *waiver expiring soon*.
-- Produce HTML and JSON reports.
+| ID | Severity | What it checks |
+| --- | --- | --- |
+| IOS-PASS-001 | high | Enable password must not be used, use enable secret |
+| IOS-PASS-002 | high | Local users must use secret, not password |
+| IOS-PASS-003 | high | Console, AUX and VTY lines must not use a line password |
+| IOS-PASS-004 | low | Password encryption service must be enabled |
+| IOS-PASS-005 | medium | Enable and user secrets must not use weak hash types 4 or 5 |
+| IOS-PASS-006 | medium | Minimum password length must be at least 8 characters |
+| IOS-PASS-007 | high | Minimum password length must be at least 8 (clear text passwords present) |
+| IOS-PASS-008 | high | Enable secret must be configured |
+| IOS-PASS-009 | high | Local users must not be configured without a password |
+| IOS-PASS-010 | medium | Login attempts must be rate limited with login block-for |
+| IOS-PASS-011 | low | Local accounts must lock after 5 or fewer failed logins |
+| IOS-MGMT-001 | high | VTY lines must accept SSH only |
+| IOS-MGMT-002 | medium | VTY lines must restrict source addresses with an access-class |
+| IOS-MGMT-003 | medium | ACL used by a VTY access-class must be defined |
+| IOS-MGMT-004 | medium | Console and VTY sessions must not have timeouts disabled |
+| IOS-MGMT-005 | low | Console and VTY session timeouts must be 10 minutes or less |
+| IOS-MGMT-006 | high | HTTP server must be disabled, use HTTPS instead |
+| IOS-MGMT-007 | medium | SSH must be limited to version 2 |
+| IOS-MGMT-008 | medium | AUX port must not start an EXEC session |
+| IOS-MGMT-009 | low | AUX and TTY lines must not accept incoming connections |
+| IOS-MGMT-010 | high | Console and VTY lines must require login |
+| IOS-MGMT-011 | high | HTTPS server must have an access-class and authentication |
+| IOS-MGMT-012 | low | SSH negotiation timeout must be 60 seconds or less |
+| IOS-MGMT-013 | low | SSH must allow at most 3 authentication retries per connection |
+| IOS-MGMT-014 | low | A login banner must be configured |
+| IOS-MGMT-015 | medium | VTY lines must restrict IPv6 sources when IPv6 is enabled |
+| IOS-AAA-001 | medium | AAA must be enabled with aaa new-model |
+| IOS-SNMP-001 | high | SNMP must not use the default communities public or private |
+| IOS-SNMP-002 | high | SNMP communities must be read-only |
+| IOS-SNMP-003 | medium | Every SNMP community must be limited by an ACL |
+| IOS-SNMP-004 | medium | SNMPv3 groups must use authentication and encryption (priv) |
+| IOS-SNMP-005 | high | SNMP must not be allowed to reload the device |
+| IOS-SVC-001 | medium | TCP and UDP small servers must be disabled |
+| IOS-SVC-002 | low | Finger service must be disabled |
+| IOS-SVC-003 | medium | Loading configuration from the network at boot must be disabled |
+| IOS-SVC-004 | high | rcp and rsh services must be disabled |
+| IOS-SVC-005 | medium | IOx application hosting must be disabled when not used |
+| IOS-SVC-006 | high | Smart Install must be disabled on switches |
+| IOS-SVC-007 | medium | IP source routing must be disabled |
+| IOS-SVC-008 | low | TCP keepalives must be enabled for incoming sessions |
+| IOS-SVC-009 | low | CDP should be disabled, at least on interfaces that do not need it |
+| IOS-IF-001 | low | Packets with IP options must be dropped |
+| IOS-IF-002 | medium | Proxy ARP must be disabled on routed interfaces |
+| IOS-IF-003 | low | ICMP redirects must be disabled on routed interfaces |
+| IOS-L2-001 | medium | Active access ports must have port security or 802.1X/MAB |
+| IOS-L2-002 | medium | Switch ports must have an explicit switchport mode |
+| IOS-L2-003 | medium | Trunk ports must not negotiate with DTP |
+| IOS-L2-004 | medium | HSRP and VRRP groups must use MD5 authentication |
+| IOS-L2-005 | medium | Active access ports must be protected by BPDU guard |
+| IOS-L2-006 | medium | Trunk native VLAN must not be VLAN 1 |
+| IOS-L2-007 | medium | DHCP snooping must be enabled on switches |
+| IOS-LOG-001 | low | Log messages must carry date and time stamps |
+| IOS-LOG-002 | medium | Logs must be sent to a remote syslog server |
+| IOS-LOG-003 | medium | Configuration changes must be logged |
+| IOS-LOG-004 | medium | Configuration change log must hide passwords |
+| IOS-LOG-005 | medium | Failed logins must be logged |
+| IOS-LOG-006 | low | Successful logins should be logged |
+| IOS-NTP-001 | medium | An NTP server or peer must be configured |
+| IOS-NTP-002 | low | NTP control messages (mode 6) must be disabled |
+| IOS-NTP-003 | medium | NTP servers and peers must be authenticated |
+
+See [docs/adding-rules.md](docs/adding-rules.md) for how to write a new rule.
 
 ## Roadmap
 
 | Version | Scope | Status |
 | --- | --- | --- |
-| v0.1 | Cisco IOS config from file, 15–20 rules, HTML/JSON report | in progress (engine + 11 rules done, reports planned) |
+| v0.1 | Cisco IOS config from file, core hardening rules, HTML/JSON report | in progress (engine and 60 rules done, reports to do) |
 | v0.2 | SSH collection (Netmiko), git backup, `collect` command | planned |
-| v0.3 | Scheduler with separate backup/compliance intervals, compliance drift | planned |
-| v0.4 | Waivers, MikroTik plugin | planned |
-| v0.5 | Syslog-triggered collection | planned |
+| v0.3 | Scheduler, compliance drift between runs | planned |
+| v0.4 | Waivers (accepted risk with owner and expiry), MikroTik | planned |
+| v0.5 | Collection triggered by syslog | planned |
 
 ## Project layout
 
 ```
 src/guardian/
-├── cli/            # thin command-line layer, no business logic
-├── core/           # UI-independent core (reusable by a future GUI/web)
+├── cli/            # command-line layer only, no logic
+├── core/           # everything else, independent of the CLI (a GUI/web UI can reuse it)
 │   ├── models.py   # ConfigLine, Severity, Finding
 │   ├── platforms.py  # platform -> parser + rule set
-│   ├── audit.py    # pipeline: parse -> load rules -> evaluate
+│   ├── audit.py    # parse -> load rules -> evaluate
 │   ├── redact.py   # masks secrets in findings
-│   ├── parsers/    # per-syntax config parsers (cisco.py)
-│   ├── rules/      # rule model, loader/validator, engine, custom checks
-│   └── inventory/ collectors/ storage/ reporting/ scheduler/   # planned
-└── rulesets/       # rule definitions (YAML), one directory per platform
-docs/               # adding-rules.md: rule format reference
+│   ├── parsers/    # config parsers (cisco.py)
+│   └── rules/      # rule model, loader, engine, custom checks
+└── rulesets/       # YAML rules, one directory per platform
+docs/               # adding-rules.md
 tests/              # pytest suite and sample configs
 ```
 
@@ -69,7 +142,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-guardian version   # smoke check
+guardian version   # quick check
 pytest             # tests
 ruff check .       # lint
 ruff format .      # format
@@ -77,12 +150,29 @@ ruff format .      # format
 
 ## Security notes
 
-- Credentials are never stored in this repository.
-- Collected configs contain secrets (SNMP communities, password hashes). Backups and
-  run history live outside this repository (see `.gitignore`).
-- Only lab configs are used as test fixtures.
-- Rules are written in the author's own words and reference control IDs only;
-  no third-party benchmark text is reproduced.
+- No credentials are stored in this repository.
+- Device configs contain secrets (SNMP communities, password hashes), so
+  backups and run history are kept outside this repository.
+- Test configs are made-up lab configs, never taken from a production network.
+  All passwords, hashes and keys in them are fake.
+- Rule texts are original wording, not copied from benchmarks. Where a rule
+  follows a benchmark, it references the control ID only.
+
+## Use of AI
+
+I use Claude (Anthropic's AI assistant) while building Guardian, mainly as a
+tutor and a pair programmer:
+
+- It explains Python and Cisco topics.
+- It reviews the rules I write.
+- It wrote larger parts of the code, for example the rule engine, the config
+  parser and the custom Python checks.
+- It wrote most of the rules: I wrote IOS-PASS-001 to IOS-PASS-003 myself,
+  the other rules were written by Claude from a list of hardening topics I
+  chose, together with their test configs.
+
+I read through the code until I understand it, test it, and decide what gets
+merged.
 
 ## License
 

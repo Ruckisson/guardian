@@ -1,0 +1,32 @@
+id: IOS-MGMT-012
+title: SSH negotiation timeout must be 60 seconds or less
+severity: low
+
+scope: global
+
+check:
+  value:
+    pattern: "^ip ssh time-out (\\d+)"   # seconds
+    max: 60
+    # IOS default is 120 seconds, so a missing line is not compliant.
+    if_missing: fail
+
+rationale: >
+  The timeout limits how long an unauthenticated SSH connection may wait at
+  the login stage. A short timeout frees VTY lines held by slow or idle
+  connection attempts sooner.
+
+remediation: |
+  ip ssh time-out 60
+
+examples:
+  compliant:
+    - |
+      ip ssh time-out 60
+    - |
+      ip ssh time-out 30
+  non_compliant:
+    - |
+      ip ssh time-out 120
+    - |
+      ip ssh version 2

@@ -1,0 +1,34 @@
+id: IOS-IF-001
+title: Packets with IP options must be dropped
+severity: low
+
+scope: global
+
+check:
+  # Passes on multicast routers ("ip multicast-routing" or "ip pim" on an
+  # interface), where dropping options would break IGMP, PIM and RSVP.
+  python: ip-options-drop
+
+rationale: >
+  Packets with IP options are processed by the CPU instead of in hardware,
+  so a stream of them can overload the device. They are almost never needed
+  (source routing, record route). Exception: "ip options drop" also drops
+  packets with the Router Alert option that IGMP, PIM and RSVP rely on, so
+  the rule does not apply to devices that route multicast.
+
+remediation: |
+  ip options drop
+
+examples:
+  compliant:
+    - |
+      ip options drop
+    - |
+      ip multicast-routing
+    - |
+      interface GigabitEthernet0/1
+       ip address 10.0.10.1 255.255.255.0
+       ip pim sparse-mode
+  non_compliant:
+    - |
+      hostname R1

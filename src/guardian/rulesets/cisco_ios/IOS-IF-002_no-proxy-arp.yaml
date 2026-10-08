@@ -1,0 +1,42 @@
+id: IOS-IF-002
+title: Proxy ARP must be disabled on routed interfaces
+severity: medium
+
+scope:
+  path: "^interface (?!Loopback|Null|Tunnel)"
+  has_child: "^ip address (\\d|dhcp)"
+  not_has_child: "^shutdown$"
+
+check:
+  must_exist: "^no ip proxy-arp$"
+
+rationale: >
+  With proxy ARP the router answers ARP requests for addresses in other
+  networks. It hides bad host netmasks and lets a host on one segment reach
+  places it should not, and a spoofed answer can redirect traffic.
+
+remediation: |
+  interface <interface>
+   no ip proxy-arp
+
+examples:
+  compliant:
+    - |
+      interface Vlan99
+       ip address 172.16.1.2 255.255.255.0
+       no ip proxy-arp
+    - |
+      interface Loopback0
+       ip address 10.255.0.1 255.255.255.255
+    - |
+      interface GigabitEthernet0/2
+       ip address 10.0.2.1 255.255.255.0
+       shutdown
+  non_compliant:
+    - |
+      interface GigabitEthernet0/0
+       description WAN
+       ip address dhcp
+    - |
+      interface GigabitEthernet0/0
+       ip address 10.0.0.1 255.255.255.0

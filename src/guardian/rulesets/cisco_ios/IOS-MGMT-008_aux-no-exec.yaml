@@ -1,0 +1,33 @@
+id: IOS-MGMT-008
+title: AUX port must not start an EXEC session
+severity: medium
+
+scope:
+  path: "^line aux "
+
+check:
+  must_exist: "^no exec$"
+
+rationale: >
+  The AUX port is often wired to a modem or terminal server and forgotten.
+  With "no exec" it never gives a command prompt, so it cannot become a back
+  door into the device.
+
+remediation: |
+  line aux 0
+   no exec
+   transport input none
+   transport output none
+
+examples:
+  compliant:
+    - |
+      line aux 0
+       no exec
+       transport input none
+  non_compliant:
+    - |
+      line aux 0
+    - |
+      line aux 0
+       transport input none

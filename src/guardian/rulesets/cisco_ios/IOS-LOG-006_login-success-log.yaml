@@ -1,0 +1,23 @@
+id: IOS-LOG-006
+title: Successful logins should be logged
+severity: low
+
+scope: global
+
+check:
+  must_exist: "^login on-success log"
+
+rationale: >
+  A log of successful logins shows who was on the device when something
+  changed, and reveals a login with stolen credentials.
+
+remediation: |
+  login on-success log
+
+examples:
+  compliant:
+    - |
+      login on-success log
+  non_compliant:
+    - |
+      login on-failure log

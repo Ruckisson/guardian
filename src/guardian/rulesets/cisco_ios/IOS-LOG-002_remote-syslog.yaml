@@ -1,0 +1,31 @@
+id: IOS-LOG-002
+title: Logs must be sent to a remote syslog server
+severity: medium
+
+scope: global
+
+check:
+  must_exist: "^logging (host \\S+|\\d+\\.\\d+\\.\\d+\\.\\d+)"
+
+rationale: >
+  The local log buffer is small and lost on reload. A remote syslog server
+  keeps the history, and an attacker who gets on the device cannot erase it.
+
+remediation: |
+  logging host <syslog-ip>
+  logging trap informational
+  logging source-interface <management-interface>
+
+examples:
+  compliant:
+    - |
+      logging host 172.16.1.50
+    - |
+      logging 172.16.1.50
+    - |
+      logging host 172.16.1.50 vrf MGMT
+  non_compliant:
+    - |
+      logging buffered 64000 informational
+    - |
+      hostname R1

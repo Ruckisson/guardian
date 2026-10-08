@@ -1,0 +1,27 @@
+id: IOS-SVC-002
+title: Finger service must be disabled
+severity: low
+
+scope: global
+
+check:
+  must_not_exist: "^(ip finger|service finger)( |$)"
+
+rationale: >
+  Finger tells anyone who asks which users are logged in and from where,
+  which helps an attacker pick targets.
+
+remediation: |
+  no ip finger
+
+examples:
+  compliant:
+    - |
+      no ip finger
+    - |
+      hostname R1
+  non_compliant:
+    - |
+      ip finger
+    - |
+      service finger

@@ -1,0 +1,24 @@
+id: IOS-SNMP-005
+title: SNMP must not be allowed to reload the device
+severity: high
+
+scope: global
+
+check:
+  must_not_exist: "^snmp-server system-shutdown$"
+
+rationale: >
+  With "snmp-server system-shutdown" a single SNMP write request can reload
+  the device. Combined with a leaked or guessed RW community this is a
+  remote off switch.
+
+remediation: |
+  no snmp-server system-shutdown
+
+examples:
+  compliant:
+    - |
+      snmp-server community Xq7-lab-monitoring RO 10
+  non_compliant:
+    - |
+      snmp-server system-shutdown

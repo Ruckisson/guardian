@@ -1,0 +1,35 @@
+id: IOS-MGMT-011
+title: HTTPS server must have an access-class and authentication
+severity: high
+
+scope: global
+
+check:
+  # Passes when "ip http secure-server" is not configured.
+  python: https-server-restricted
+
+rationale: >
+  The web UI is a frequent target; CVE-2023-20198 let attackers create
+  privileged accounts on thousands of IOS XE devices through it. If the
+  HTTPS server is needed, allow only management addresses and require
+  local or AAA authentication.
+
+remediation: |
+  ip http access-class ipv4 MGMT-ACCESS
+  ip http authentication local
+  Or turn it off: no ip http secure-server
+
+examples:
+  compliant:
+    - |
+      no ip http secure-server
+    - |
+      ip http secure-server
+      ip http access-class ipv4 MGMT-ACCESS
+      ip http authentication local
+  non_compliant:
+    - |
+      ip http secure-server
+    - |
+      ip http secure-server
+      ip http authentication local

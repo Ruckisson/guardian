@@ -1,0 +1,29 @@
+id: IOS-NTP-001
+title: An NTP server or peer must be configured
+severity: medium
+
+scope: global
+
+check:
+  must_exist: "^ntp (server|peer) "
+
+rationale: >
+  Without NTP the clock drifts and log timestamps cannot be matched with
+  other devices during an incident. Certificates and time based ACLs also
+  need the correct time. Two or more servers are better than one.
+
+remediation: |
+  ntp server <ntp-ip-1>
+  ntp server <ntp-ip-2>
+
+examples:
+  compliant:
+    - |
+      ntp server 172.16.1.1
+    - |
+      ntp server vrf MGMT 172.16.1.1
+    - |
+      ntp peer 10.0.0.2
+  non_compliant:
+    - |
+      clock timezone CET 1 0
