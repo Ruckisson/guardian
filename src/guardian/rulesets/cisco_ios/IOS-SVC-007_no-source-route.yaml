@@ -1,0 +1,27 @@
+id: IOS-SVC-007
+title: IP source routing must be disabled
+severity: medium
+
+scope: global
+
+check:
+  must_exist: "^no ip source-route$"
+
+rationale: >
+  With source routing the sender decides the path of a packet. Attackers use
+  it to get around filters and to make spoofed traffic return to them. IOS
+  has it on by default and does not show the default in the running config,
+  so the rule looks for the explicit "no ip source-route".
+
+remediation: |
+  no ip source-route
+
+examples:
+  compliant:
+    - |
+      no ip source-route
+  non_compliant:
+    - |
+      ip source-route
+    - |
+      hostname R1

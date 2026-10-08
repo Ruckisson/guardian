@@ -1,0 +1,25 @@
+id: IOS-NTP-002
+title: NTP control messages (mode 6) must be disabled
+severity: low
+
+scope: global
+
+check:
+  must_exist: "^no ntp allow mode control$"
+
+rationale: >
+  NTP mode 6 queries reveal details about the device and its time sources
+  and have been abused for amplification attacks. Normal time sync does not
+  need them.
+
+remediation: |
+  no ntp allow mode control
+
+examples:
+  compliant:
+    - |
+      ntp server 172.16.1.1
+      no ntp allow mode control
+  non_compliant:
+    - |
+      ntp server 172.16.1.1

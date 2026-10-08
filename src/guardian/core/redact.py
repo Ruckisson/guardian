@@ -22,6 +22,8 @@ _PATTERNS = [
     ),
     # ... password [type] <secret>   /   ... secret [type] <secret>
     re.compile(r"\b(?:password|secret)(?: \d{1,2})? (\S+)"),
+    # URL with credentials: ftp://user:<secret>@host/... (boot network, archive path, ...)
+    re.compile(r"://[^:/@\s]+:([^@\s]+)@"),
     # key-string [type] <secret>
     re.compile(r"\bkey-string(?: \d)? (\S+)"),
     # tacacs-server key [type] <secret>, radius-server key ..., key <secret>

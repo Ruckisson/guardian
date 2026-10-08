@@ -1,0 +1,28 @@
+id: IOS-AAA-001
+title: AAA must be enabled with aaa new-model
+severity: medium
+
+scope: global
+
+check:
+  must_exist: "^aaa new-model$"
+
+rationale: >
+  Without AAA the device knows only line passwords and local users with no
+  method lists, no central TACACS+/RADIUS, no lockout and no accounting.
+
+remediation: |
+  aaa new-model
+  aaa authentication login default local
+  aaa authorization exec default local
+
+examples:
+  compliant:
+    - |
+      aaa new-model
+      aaa authentication login default local
+  non_compliant:
+    - |
+      no aaa new-model
+    - |
+      hostname SW1

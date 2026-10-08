@@ -1,0 +1,31 @@
+id: IOS-MGMT-014
+title: A login banner must be configured
+severity: low
+
+scope: global
+
+check:
+  # The parser keeps only "banner login" / "banner motd"; the text becomes children.
+  must_exist: "^banner (login|motd)$"
+
+rationale: >
+  A banner shown before login states that access is for authorized users
+  only and is monitored. In many countries that notice matters if
+  unauthorized access is ever taken to court.
+
+remediation: |
+  banner login ^C
+  Authorized access only. All activity is logged.
+  ^C
+
+examples:
+  compliant:
+    - |
+      banner login ^C
+      Authorized access only.
+      ^C
+    - |
+      banner motd #Authorized access only#
+  non_compliant:
+    - |
+      hostname R1

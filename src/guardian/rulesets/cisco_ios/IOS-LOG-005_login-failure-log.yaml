@@ -1,0 +1,28 @@
+id: IOS-LOG-005
+title: Failed logins must be logged
+severity: medium
+
+scope: global
+
+check:
+  must_exist: "^login on-failure log"
+
+rationale: >
+  Without it failed logins leave no trace, so password guessing goes
+  unnoticed until it succeeds.
+
+remediation: |
+  login on-failure log
+  login on-success log
+
+examples:
+  compliant:
+    - |
+      login on-failure log
+    - |
+      login on-failure log every 5
+  non_compliant:
+    - |
+      login on-success log
+    - |
+      hostname R1

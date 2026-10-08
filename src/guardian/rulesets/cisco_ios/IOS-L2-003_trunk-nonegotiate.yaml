@@ -1,0 +1,31 @@
+id: IOS-L2-003
+title: Trunk ports must not negotiate with DTP
+severity: medium
+
+scope:
+  path: "^interface "
+  has_child: "^switchport mode trunk$"
+
+check:
+  must_exist: "^switchport nonegotiate$"
+
+rationale: >
+  A static trunk still sends DTP frames unless negotiation is turned off.
+  That tells anyone on the link it is a trunk and keeps DTP running where
+  it is not needed.
+
+remediation: |
+  interface <trunk-port>
+   switchport nonegotiate
+
+examples:
+  compliant:
+    - |
+      interface Ethernet0/0
+       switchport mode trunk
+       switchport nonegotiate
+  non_compliant:
+    - |
+      interface Ethernet0/0
+       switchport trunk encapsulation dot1q
+       switchport mode trunk

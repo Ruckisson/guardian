@@ -1,0 +1,55 @@
+id: IOS-L2-005
+title: Active access ports must be protected by BPDU guard
+severity: medium
+
+scope:
+  path: "^interface "
+  has_child: "^switchport mode access$"
+  not_has_child: "^shutdown$"
+
+check:
+  # Per port "spanning-tree bpduguard enable", or the global
+  # "spanning-tree portfast bpduguard default" on a PortFast port.
+  python: bpduguard
+
+rationale: >
+  An access port should never receive BPDUs. If someone plugs in a switch,
+  BPDU guard shuts the port down instead of letting the new switch join the
+  spanning tree, where it could cause loops or become root.
+
+remediation: |
+  spanning-tree portfast bpduguard default
+  interface <access-port>
+   spanning-tree portfast
+
+examples:
+  compliant:
+    - |
+      interface Ethernet0/1
+       switchport mode access
+       spanning-tree bpduguard enable
+    - |
+      spanning-tree portfast bpduguard default
+      interface Ethernet0/1
+       switchport mode access
+       spanning-tree portfast
+    - |
+      spanning-tree portfast default
+      spanning-tree portfast bpduguard default
+      interface Ethernet0/1
+       switchport mode access
+  non_compliant:
+    - |
+      interface Ethernet0/1
+       switchport mode access
+       spanning-tree portfast
+    - |
+      spanning-tree portfast bpduguard default
+      interface Ethernet0/1
+       switchport mode access
+    - |
+      spanning-tree portfast bpduguard default
+      interface Ethernet0/1
+       switchport mode access
+       spanning-tree portfast
+       spanning-tree bpduguard disable

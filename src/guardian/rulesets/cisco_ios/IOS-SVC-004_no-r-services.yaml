@@ -1,0 +1,27 @@
+id: IOS-SVC-004
+title: rcp and rsh services must be disabled
+severity: high
+
+scope: global
+
+check:
+  must_not_exist: "^ip rcmd (rcp|rsh)-enable"
+
+rationale: >
+  The BSD r-services send everything in clear text and trust the client's
+  host name and user name. Use SCP over SSH to copy files instead.
+
+remediation: |
+  no ip rcmd rcp-enable
+  no ip rcmd rsh-enable
+  ip scp server enable
+
+examples:
+  compliant:
+    - |
+      ip scp server enable
+  non_compliant:
+    - |
+      ip rcmd rcp-enable
+    - |
+      ip rcmd rsh-enable

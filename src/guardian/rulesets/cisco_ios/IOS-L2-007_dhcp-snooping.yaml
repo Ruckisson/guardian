@@ -1,0 +1,40 @@
+id: IOS-L2-007
+title: DHCP snooping must be enabled on switches
+severity: medium
+
+scope: global
+
+check:
+  # Passes on routers (no switchport interfaces).
+  python: dhcp-snooping
+
+rationale: >
+  Without DHCP snooping any host can run a rogue DHCP server and hand out
+  itself as the default gateway or DNS server. Snooping lets DHCP offers in
+  only on trusted ports (uplinks). It is also the base for Dynamic ARP
+  Inspection and IP Source Guard.
+
+remediation: |
+  ip dhcp snooping
+  ip dhcp snooping vlan 10,20
+  interface <uplink>
+   ip dhcp snooping trust
+
+examples:
+  compliant:
+    - |
+      ip dhcp snooping vlan 10
+      ip dhcp snooping
+      interface Ethernet0/1
+       switchport mode access
+    - |
+      interface GigabitEthernet0/0
+       ip address 10.0.0.1 255.255.255.0
+  non_compliant:
+    - |
+      interface Ethernet0/1
+       switchport mode access
+    - |
+      ip dhcp snooping
+      interface Ethernet0/1
+       switchport mode access

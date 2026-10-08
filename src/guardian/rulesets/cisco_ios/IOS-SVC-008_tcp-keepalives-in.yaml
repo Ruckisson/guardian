@@ -1,0 +1,24 @@
+id: IOS-SVC-008
+title: TCP keepalives must be enabled for incoming sessions
+severity: low
+
+scope: global
+
+check:
+  must_exist: "^service tcp-keepalives-in$"
+
+rationale: >
+  Without keepalives a VTY session whose client crashed or lost the network
+  stays open and keeps its VTY line. Enough of them and nobody can log in.
+
+remediation: |
+  service tcp-keepalives-in
+  service tcp-keepalives-out
+
+examples:
+  compliant:
+    - |
+      service tcp-keepalives-in
+  non_compliant:
+    - |
+      hostname R1

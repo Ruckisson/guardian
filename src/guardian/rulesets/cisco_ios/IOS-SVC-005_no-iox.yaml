@@ -1,0 +1,27 @@
+id: IOS-SVC-005
+title: IOx application hosting must be disabled when not used
+severity: medium
+
+scope: global
+
+check:
+  must_not_exist: "^iox$"
+
+rationale: >
+  IOx runs Linux containers (Guest Shell, apps) on the device. Each one is
+  extra code with network access that has to be patched and watched. Turn it
+  off unless an application really needs it.
+
+remediation: |
+  guestshell disable
+  no iox
+
+examples:
+  compliant:
+    - |
+      no iox
+    - |
+      hostname R1
+  non_compliant:
+    - |
+      iox

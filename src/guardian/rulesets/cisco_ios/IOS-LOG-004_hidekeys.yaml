@@ -1,0 +1,34 @@
+id: IOS-LOG-004
+title: Configuration change log must hide passwords
+severity: medium
+
+scope:
+  path: ["^archive$", "^log config$"]
+
+check:
+  must_exist: "^hidekeys$"
+
+rationale: >
+  The change logger records every command as typed, including passwords and
+  keys, and sends them to syslog. "hidekeys" masks them. Missing archive
+  logging itself is reported by IOS-LOG-003.
+
+remediation: |
+  archive
+   log config
+    hidekeys
+
+examples:
+  compliant:
+    - |
+      archive
+       log config
+        logging enable
+        hidekeys
+    - |
+      hostname R1
+  non_compliant:
+    - |
+      archive
+       log config
+        logging enable

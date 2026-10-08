@@ -23,6 +23,10 @@ from guardian.core.redact import MASK, redact
         ),
         (" password 7 0822455D0A16", f" password 7 {MASK}"),
         ("tacacs-server key 7 0822455D0A16", f"tacacs-server key 7 {MASK}"),
+        (
+            "boot network ftp://admin:S3cret@10.0.0.5/r1-confg",
+            f"boot network ftp://admin:{MASK}@10.0.0.5/r1-confg",
+        ),
         (" key-string 7 0822455D0A16", f" key-string 7 {MASK}"),
     ],
 )

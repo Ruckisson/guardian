@@ -1,0 +1,55 @@
+id: IOS-L2-002
+title: Switch ports must have an explicit switchport mode
+severity: medium
+
+scope:
+  # SVIs, loopbacks, tunnels and routed ports ("no switchport") never run DTP.
+  path: "^interface (?!Vlan|Loopback|Tunnel|Null)"
+  has_child: "^switchport"
+  not_has_child: "^no switchport$"
+
+check:
+  # Private VLAN and QinQ tunnel ports are explicit modes too.
+  must_exist: "^switchport mode (access|trunk|dot1q-tunnel|private-vlan \\S+)$"
+
+rationale: >
+  A port without a fixed mode runs DTP ("dynamic auto/desirable") and can
+  become a trunk when the other side asks for it. An attacker's machine can
+  then reach every VLAN on the trunk (VLAN hopping).
+  Limitation: ports with no switchport line at all are not checked.
+
+remediation: |
+  interface <access-port>
+   switchport mode access
+  interface <trunk-port>
+   switchport mode trunk
+
+examples:
+  compliant:
+    - |
+      interface Ethernet0/1
+       switchport access vlan 10
+       switchport mode access
+    - |
+      interface Ethernet0/0
+       switchport trunk encapsulation dot1q
+       switchport mode trunk
+    - |
+      interface GigabitEthernet1/0/24
+       no switchport
+       ip address 10.0.0.1 255.255.255.252
+    - |
+      interface GigabitEthernet1/0/3
+       switchport private-vlan host-association 100 101
+       switchport mode private-vlan host
+    - |
+      interface GigabitEthernet1/0/4
+       switchport access vlan 50
+       switchport mode dot1q-tunnel
+  non_compliant:
+    - |
+      interface Ethernet0/1
+       switchport access vlan 10
+    - |
+      interface Ethernet0/2
+       switchport mode dynamic desirable

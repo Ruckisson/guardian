@@ -119,3 +119,23 @@ class Rule:
     references: tuple[str, ...] = ()
     examples: Examples = field(default_factory=Examples)
     source: Path | None = None
+
+    @property
+    def area(self) -> str:
+        """The AREA part of the PLATFORM-AREA-NNN id, e.g. ``SNMP``."""
+        return self.id.split("-")[1]
+
+
+# Short descriptions of rule areas, shown above each group by "guardian rules".
+# An area missing here (e.g. in a custom rule directory) is shown without one.
+AREA_DESCRIPTIONS = {
+    "AAA": "Authentication, authorization and accounting",
+    "IF": "Interfaces and IP packet handling (proxy ARP, redirects, IP options)",
+    "L2": "Layer 2 security (port security/802.1X, DTP, native VLAN, BPDU guard, DHCP snooping)",
+    "LOG": "Logging (timestamps, remote syslog, config changes, logins)",
+    "MGMT": "Management access (VTY, console, AUX, SSH, HTTP/HTTPS server, banner)",
+    "NTP": "Time synchronization (NTP servers and authentication)",
+    "PASS": "Passwords, secrets and login protection",
+    "SNMP": "SNMP communities and SNMPv3",
+    "SVC": "Unneeded services (small servers, r-services, Smart Install, source routing, CDP)",
+}

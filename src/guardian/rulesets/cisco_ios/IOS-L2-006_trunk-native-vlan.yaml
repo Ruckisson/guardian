@@ -1,0 +1,39 @@
+id: IOS-L2-006
+title: Trunk native VLAN must not be VLAN 1
+severity: medium
+
+scope:
+  path: "^interface "
+  has_child: "^switchport mode trunk$"
+
+check:
+  # A missing "switchport trunk native vlan" means VLAN 1.
+  must_exist: "^switchport trunk native vlan (?!1$)\\d+$"
+
+rationale: >
+  Frames in the native VLAN cross the trunk untagged. If it is VLAN 1 (the
+  default, shared with user ports) an attacker can send double tagged frames
+  into another VLAN. Use an unused VLAN as native VLAN on every trunk.
+
+remediation: |
+  interface <trunk-port>
+   switchport trunk native vlan 998
+
+examples:
+  compliant:
+    - |
+      interface Ethernet0/0
+       switchport trunk native vlan 998
+       switchport mode trunk
+    - |
+      interface Ethernet0/0
+       switchport trunk native vlan 10
+       switchport mode trunk
+  non_compliant:
+    - |
+      interface Ethernet0/0
+       switchport mode trunk
+    - |
+      interface Ethernet0/0
+       switchport trunk native vlan 1
+       switchport mode trunk

@@ -11,7 +11,8 @@ roadmap is planned and not done yet.
 ## What works today
 
 - Auditing a Cisco IOS / IOS-XE `show running-config` saved to a file.
-- 15 rules, listed below.
+- 60 rules in 9 areas, listed below: passwords, management access, AAA, SNMP,
+  unneeded services, interfaces, layer 2, logging and NTP.
 - Rules are plain YAML files. The loader validates every rule and refuses a
   broken one instead of skipping it, so a typo can't turn into a rule that
   checks nothing.
@@ -21,7 +22,14 @@ roadmap is planned and not done yet.
   - a number must be within limits
   - a reference must be defined (e.g. the ACL used by a VTY line has to exist)
   - a custom Python check, for cases YAML can't express
-- Passwords, SNMP communities and keys are masked in the output.
+- Rules that only make sense when a feature is configured (HTTPS server,
+  HSRP/VRRP, NTP, IPv6, switch-only features) don't report anything when the
+  feature isn't there.
+- Passwords, SNMP communities, keys and credentials in URLs are masked in the
+  output.
+- `guardian audit` groups findings by rule, most severe first: each rule once
+  with its title, every failing place in the config below it, and a summary
+  per severity. `guardian rules` lists the rules grouped by area.
 - Exit codes: 0 compliant, 1 findings, 2 Guardian couldn't run (missing file,
   broken rule). This makes it usable in scripts and CI.
 
@@ -33,23 +41,68 @@ guardian audit running-config.txt --rules ./my-rules # use your own rules
 
 ## Rules
 
-| ID | What it checks |
-| --- | --- |
-| IOS-MGMT-001 | VTY lines accept SSH only |
-| IOS-MGMT-002 | VTY lines have an access-class |
-| IOS-MGMT-003 | the ACL used by the access-class is defined |
-| IOS-MGMT-004 | console and VTY timeouts are not disabled |
-| IOS-MGMT-005 | console and VTY timeouts are 10 minutes or less |
-| IOS-MGMT-006 | the HTTP server (`ip http server`) is disabled |
-| IOS-SNMP-001 | no `public` / `private` communities |
-| IOS-SNMP-002 | no read-write communities |
-| IOS-SNMP-003 | every community is limited by an ACL |
-| IOS-SNMP-004 | SNMPv3 groups use authentication and encryption |
-| IOS-PASS-001 | `enable secret` is used instead of `enable password` |
-| IOS-PASS-002 | local users have `secret`, not `password` |
-| IOS-PASS-003 | console, AUX and VTY lines don't use a line password |
-| IOS-L2-001 | active access ports have port security |
-| IOS-LOG-001 | log messages have date and time stamps |
+| ID | Severity | What it checks |
+| --- | --- | --- |
+| IOS-PASS-001 | high | Enable password must not be used, use enable secret |
+| IOS-PASS-002 | high | Local users must use secret, not password |
+| IOS-PASS-003 | high | Console, AUX and VTY lines must not use a line password |
+| IOS-PASS-004 | low | Password encryption service must be enabled |
+| IOS-PASS-005 | medium | Enable and user secrets must not use weak hash types 4 or 5 |
+| IOS-PASS-006 | medium | Minimum password length must be at least 8 characters |
+| IOS-PASS-007 | high | Minimum password length must be at least 8 (clear text passwords present) |
+| IOS-PASS-008 | high | Enable secret must be configured |
+| IOS-PASS-009 | high | Local users must not be configured without a password |
+| IOS-PASS-010 | medium | Login attempts must be rate limited with login block-for |
+| IOS-PASS-011 | low | Local accounts must lock after 5 or fewer failed logins |
+| IOS-MGMT-001 | high | VTY lines must accept SSH only |
+| IOS-MGMT-002 | medium | VTY lines must restrict source addresses with an access-class |
+| IOS-MGMT-003 | medium | ACL used by a VTY access-class must be defined |
+| IOS-MGMT-004 | medium | Console and VTY sessions must not have timeouts disabled |
+| IOS-MGMT-005 | low | Console and VTY session timeouts must be 10 minutes or less |
+| IOS-MGMT-006 | high | HTTP server must be disabled, use HTTPS instead |
+| IOS-MGMT-007 | medium | SSH must be limited to version 2 |
+| IOS-MGMT-008 | medium | AUX port must not start an EXEC session |
+| IOS-MGMT-009 | low | AUX and TTY lines must not accept incoming connections |
+| IOS-MGMT-010 | high | Console and VTY lines must require login |
+| IOS-MGMT-011 | high | HTTPS server must have an access-class and authentication |
+| IOS-MGMT-012 | low | SSH negotiation timeout must be 60 seconds or less |
+| IOS-MGMT-013 | low | SSH must allow at most 3 authentication retries per connection |
+| IOS-MGMT-014 | low | A login banner must be configured |
+| IOS-MGMT-015 | medium | VTY lines must restrict IPv6 sources when IPv6 is enabled |
+| IOS-AAA-001 | medium | AAA must be enabled with aaa new-model |
+| IOS-SNMP-001 | high | SNMP must not use the default communities public or private |
+| IOS-SNMP-002 | high | SNMP communities must be read-only |
+| IOS-SNMP-003 | medium | Every SNMP community must be limited by an ACL |
+| IOS-SNMP-004 | medium | SNMPv3 groups must use authentication and encryption (priv) |
+| IOS-SNMP-005 | high | SNMP must not be allowed to reload the device |
+| IOS-SVC-001 | medium | TCP and UDP small servers must be disabled |
+| IOS-SVC-002 | low | Finger service must be disabled |
+| IOS-SVC-003 | medium | Loading configuration from the network at boot must be disabled |
+| IOS-SVC-004 | high | rcp and rsh services must be disabled |
+| IOS-SVC-005 | medium | IOx application hosting must be disabled when not used |
+| IOS-SVC-006 | high | Smart Install must be disabled on switches |
+| IOS-SVC-007 | medium | IP source routing must be disabled |
+| IOS-SVC-008 | low | TCP keepalives must be enabled for incoming sessions |
+| IOS-SVC-009 | low | CDP should be disabled, at least on interfaces that do not need it |
+| IOS-IF-001 | low | Packets with IP options must be dropped |
+| IOS-IF-002 | medium | Proxy ARP must be disabled on routed interfaces |
+| IOS-IF-003 | low | ICMP redirects must be disabled on routed interfaces |
+| IOS-L2-001 | medium | Active access ports must have port security or 802.1X/MAB |
+| IOS-L2-002 | medium | Switch ports must have an explicit switchport mode |
+| IOS-L2-003 | medium | Trunk ports must not negotiate with DTP |
+| IOS-L2-004 | medium | HSRP and VRRP groups must use MD5 authentication |
+| IOS-L2-005 | medium | Active access ports must be protected by BPDU guard |
+| IOS-L2-006 | medium | Trunk native VLAN must not be VLAN 1 |
+| IOS-L2-007 | medium | DHCP snooping must be enabled on switches |
+| IOS-LOG-001 | low | Log messages must carry date and time stamps |
+| IOS-LOG-002 | medium | Logs must be sent to a remote syslog server |
+| IOS-LOG-003 | medium | Configuration changes must be logged |
+| IOS-LOG-004 | medium | Configuration change log must hide passwords |
+| IOS-LOG-005 | medium | Failed logins must be logged |
+| IOS-LOG-006 | low | Successful logins should be logged |
+| IOS-NTP-001 | medium | An NTP server or peer must be configured |
+| IOS-NTP-002 | low | NTP control messages (mode 6) must be disabled |
+| IOS-NTP-003 | medium | NTP servers and peers must be authenticated |
 
 See [docs/adding-rules.md](docs/adding-rules.md) for how to write a new rule.
 
@@ -57,7 +110,7 @@ See [docs/adding-rules.md](docs/adding-rules.md) for how to write a new rule.
 
 | Version | Scope | Status |
 | --- | --- | --- |
-| v0.1 | Cisco IOS config from file, 15–20 rules, HTML/JSON report | in progress (engine and 15 rules done, reports to do) |
+| v0.1 | Cisco IOS config from file, core hardening rules, HTML/JSON report | in progress (engine and 60 rules done, reports to do) |
 | v0.2 | SSH collection (Netmiko), git backup, `collect` command | planned |
 | v0.3 | Scheduler, compliance drift between runs | planned |
 | v0.4 | Waivers (accepted risk with owner and expiry), MikroTik | planned |
@@ -100,9 +153,10 @@ ruff format .      # format
 - No credentials are stored in this repository.
 - Device configs contain secrets (SNMP communities, password hashes), so
   backups and run history are kept outside this repository.
-- Test configs come from my lab only, never from a production network.
-- Rules are written in my own words. Where a rule follows a benchmark, it
-  references the control ID only and doesn't copy its text.
+- Test configs are made-up lab configs, never taken from a production network.
+  All passwords, hashes and keys in them are fake.
+- Rule texts are original wording, not copied from benchmarks. Where a rule
+  follows a benchmark, it references the control ID only.
 
 ## Use of AI
 
@@ -111,11 +165,14 @@ tutor and a pair programmer:
 
 - It explains Python and Cisco topics.
 - It reviews the rules I write.
-- It wrote larger parts of the code, for example the rule engine and the
-  config parser.
+- It wrote larger parts of the code, for example the rule engine, the config
+  parser and the custom Python checks.
+- It wrote most of the rules: I wrote IOS-PASS-001 to IOS-PASS-003 myself,
+  the other rules were written by Claude from a list of hardening topics I
+  chose, together with their test configs.
 
 I read through the code until I understand it, test it, and decide what gets
-merged. The newer rules are written by me, with Claude doing the review.
+merged.
 
 ## License
 

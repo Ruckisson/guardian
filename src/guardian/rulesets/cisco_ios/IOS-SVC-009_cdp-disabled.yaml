@@ -1,0 +1,48 @@
+id: IOS-SVC-009
+title: CDP should be disabled, at least on interfaces that do not need it
+severity: low
+
+scope: global
+
+check:
+  # Passes with "no cdp run", or "no cdp enable" on every active physical
+  # interface (Loopback, Vlan, Tunnel, Null, Port-channel, AppGigabitEthernet
+  # and subinterfaces are skipped).
+  python: cdp-disabled
+
+rationale: >
+  CDP announces the device model, IOS version, addresses and VLANs to every
+  neighbor, which is useful to an attacker on an access port or a WAN link.
+  It is only a warning: IP phones need CDP for the voice VLAN, and
+  neighbors are handy for troubleshooting. Keep it only where needed.
+
+remediation: |
+  no cdp run
+  Or per interface where it is not needed:
+  interface <interface>
+   no cdp enable
+
+examples:
+  compliant:
+    - |
+      no cdp run
+    - |
+      interface GigabitEthernet0/0
+       no cdp enable
+      interface GigabitEthernet0/1
+       shutdown
+      interface Vlan10
+       ip address 10.0.10.1 255.255.255.0
+      interface GigabitEthernet0/0.10
+       encapsulation dot1Q 10
+      interface AppGigabitEthernet1/0/1
+       switchport mode trunk
+  non_compliant:
+    - |
+      interface GigabitEthernet0/0
+       ip address 10.0.0.1 255.255.255.0
+    - |
+      interface GigabitEthernet0/0
+       no cdp enable
+      interface GigabitEthernet0/1
+       switchport mode access

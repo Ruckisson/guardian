@@ -1,0 +1,29 @@
+id: IOS-MGMT-013
+title: SSH must allow at most 3 authentication retries per connection
+severity: low
+
+scope: global
+
+check:
+  value:
+    pattern: "^ip ssh authentication-retries (\\d+)"
+    max: 3
+    # IOS default is 3, so a missing line is compliant.
+    if_missing: pass
+
+rationale: >
+  More retries per connection let a password guesser try more passwords
+  before it has to reconnect.
+
+remediation: |
+  ip ssh authentication-retries 3
+
+examples:
+  compliant:
+    - |
+      ip ssh authentication-retries 2
+    - |
+      ip ssh version 2
+  non_compliant:
+    - |
+      ip ssh authentication-retries 5

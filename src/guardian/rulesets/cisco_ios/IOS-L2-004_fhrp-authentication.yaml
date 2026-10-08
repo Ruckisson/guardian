@@ -1,0 +1,53 @@
+id: IOS-L2-004
+title: HSRP and VRRP groups must use MD5 authentication
+severity: medium
+
+scope:
+  path: "^interface "
+  has_child: "^(standby( \\d+)? ip|vrrp \\d+ ip) "
+
+check:
+  # Every group on the interface, not just one of them.
+  python: fhrp-authentication
+
+rationale: >
+  Without authentication any host on the segment can send HSRP or VRRP
+  hellos with a higher priority, become the default gateway and see all
+  traffic. Plain text authentication is visible in every hello.
+  VRRPv3 (address-family blocks) has no authentication and is not checked.
+
+remediation: |
+  key chain FHRP
+   key 1
+    key-string <secret>
+  interface <interface>
+   standby 1 authentication md5 key-chain FHRP
+
+examples:
+  compliant:
+    - |
+      interface Vlan10
+       ip address 10.0.10.2 255.255.255.0
+       standby 1 ip 10.0.10.1
+       standby 1 authentication md5 key-chain FHRP
+    - |
+      interface Vlan20
+       vrrp 2 ip 10.0.20.1
+       vrrp 2 authentication md5 key-chain FHRP
+    - |
+      interface Vlan30
+       standby ip 10.0.30.1
+       standby authentication md5 key-chain FHRP
+  non_compliant:
+    - |
+      interface Vlan10
+       standby 1 ip 10.0.10.1
+    - |
+      interface Vlan10
+       standby 1 ip 10.0.10.1
+       standby 1 authentication cisco
+    - |
+      interface Vlan10
+       standby 1 ip 10.0.10.1
+       standby 1 authentication md5 key-chain FHRP
+       standby 2 ip 10.0.10.254

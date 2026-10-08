@@ -1,5 +1,5 @@
 id: IOS-L2-001
-title: Active access ports must have port security enabled
+title: Active access ports must have port security or 802.1X/MAB
 severity: medium
 
 scope:
@@ -8,12 +8,16 @@ scope:
   not_has_child: "^shutdown$"
 
 check:
-  must_exist: "^switchport port-security$"
+  # 802.1X/MAB only protects the port when it is enforced ("port-control
+  # auto"); "dot1x pae authenticator" or "mab" alone leave the port open.
+  must_exist: "^(switchport port-security|(authentication|access-session) port-control auto)$"
 
 rationale: >
   Port security limits how many MAC addresses a port accepts. It stops MAC
   flooding of the switch table and makes it harder to plug an unknown
-  switch or device into an office port. Trunks, shut-down ports and ports
+  switch or device into an office port. 802.1X/MAB with enforced port
+  control is accepted as an equivalent: an unknown device gets no access
+  at all. Trunks, shut-down ports and ports
   without an explicit access mode are out of scope for this rule.
 
 remediation: |
@@ -21,6 +25,11 @@ remediation: |
    switchport port-security maximum 2
    switchport port-security violation restrict
    switchport port-security
+  Or 802.1X/MAB:
+  interface <access-port>
+   authentication port-control auto
+   mab
+   dot1x pae authenticator
 
 examples:
   compliant:
@@ -40,6 +49,17 @@ examples:
     - |
       interface Vlan99
        ip address 172.16.1.2 255.255.255.0
+    - |
+      interface GigabitEthernet1/0/5
+       switchport mode access
+       authentication port-control auto
+       mab
+       dot1x pae authenticator
+    - |
+      interface GigabitEthernet1/0/6
+       switchport mode access
+       access-session port-control auto
+       dot1x pae authenticator
   non_compliant:
     - |
       interface Ethernet0/1
@@ -48,3 +68,8 @@ examples:
       interface Ethernet0/1
        switchport mode access
        switchport port-security maximum 2
+    - |
+      interface GigabitEthernet1/0/5
+       switchport mode access
+       dot1x pae authenticator
+       mab

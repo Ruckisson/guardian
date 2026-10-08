@@ -1,0 +1,38 @@
+id: IOS-IF-003
+title: ICMP redirects must be disabled on routed interfaces
+severity: low
+
+scope:
+  path: "^interface (?!Loopback|Null|Tunnel)"
+  has_child: "^ip address (\\d|dhcp)"
+  not_has_child: "^shutdown$"
+
+check:
+  must_exist: "^no ip redirects$"
+
+rationale: >
+  ICMP redirects tell hosts about other routers in the network and so reveal
+  topology. Hosts should use their configured gateway, and generating
+  redirects costs CPU.
+
+remediation: |
+  interface <interface>
+   no ip redirects
+
+examples:
+  compliant:
+    - |
+      interface GigabitEthernet0/0
+       ip address 10.0.0.1 255.255.255.0
+       no ip redirects
+    - |
+      interface Ethernet0/1
+       switchport mode access
+  non_compliant:
+    - |
+      interface GigabitEthernet0/0
+       description WAN
+       ip address dhcp
+    - |
+      interface GigabitEthernet0/0
+       ip address 10.0.0.1 255.255.255.0

@@ -1,0 +1,26 @@
+id: IOS-MGMT-007
+title: SSH must be limited to version 2
+severity: medium
+
+scope: global
+
+check:
+  must_exist: "^ip ssh version 2$"
+
+rationale: >
+  SSH version 1 has known design flaws (session hijacking, weak integrity
+  checks). Without "ip ssh version 2" older IOS runs in compatibility mode
+  1.99 and still accepts version 1 clients.
+
+remediation: |
+  ip ssh version 2
+
+examples:
+  compliant:
+    - |
+      ip ssh version 2
+  non_compliant:
+    - |
+      ip ssh version 1
+    - |
+      hostname SW1
