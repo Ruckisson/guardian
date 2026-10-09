@@ -11,8 +11,24 @@ rationale: >
   A log of successful logins shows who was on the device when something
   changed, and reveals a login with stolen credentials.
 
-remediation: |
-  login on-success log
+remediation:
+  recommended_change:
+    - "login on-success log"
+  before_you_apply:
+    - >-
+      Check whether monitoring or automation logs in over SSH often. If so, make
+      sure the syslog server can take the extra messages.
+
+references:
+  stig:
+    - id: V-215849
+      stig_id: CISC-ND-001260
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AU-12]
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:

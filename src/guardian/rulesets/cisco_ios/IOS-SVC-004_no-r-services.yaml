@@ -11,10 +11,29 @@ rationale: >
   The BSD r-services send everything in clear text and trust the client's
   host name and user name. Use SCP over SSH to copy files instead.
 
-remediation: |
-  no ip rcmd rcp-enable
-  no ip rcmd rsh-enable
-  ip scp server enable
+remediation:
+  recommended_change:
+    - "no ip rcmd rcp-enable"
+    - "no ip rcmd rsh-enable"
+  before_you_apply:
+    - "Check the `ip rcmd remote-host` lines: they show which hosts use rcp or rsh."
+  if_service_needed:
+    text: >-
+      Move backups to SCP. It is a new service, so enable it only when file
+      transfer is needed; it needs `aaa new-model` and `aaa authorization exec`.
+    commands:
+      - "ip scp server enable"
+
+references:
+  stig:
+    - id: V-215823
+      stig_id: CISC-ND-000470
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: satisfies
+  nist_800_53: [CM-7]
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:

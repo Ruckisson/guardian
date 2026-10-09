@@ -1,9 +1,14 @@
 id: IOS-MGMT-010
 title: Console and VTY lines must require login
-severity: high
+severity: critical
 
 scope:
   path: "^line (con|vty) "
+  skip_if:
+    # A VTY line with "transport input none" accepts no connections.
+    - block: "^line vty "
+      child: "^transport input none$"
+      reason: the line accepts no connections (transport input none)
 
 check:
   # Without AAA: "login" or "login local". With "aaa new-model": the line's
@@ -19,11 +24,38 @@ rationale: >
   "none" lets anyone in, either always or whenever the TACACS+/RADIUS
   server is unreachable.
 
-remediation: |
-  aaa new-model
-  aaa authentication login default local
-  line con 0
-   login authentication default
+remediation:
+  recommended_change:
+    - when_config: "^aaa new-model$"
+      commands:
+        - "{block}"
+        - " login authentication default"
+    - commands:
+        - "{block}"
+        - " login local"
+  before_you_apply:
+    - >-
+      A local user with `secret` and privilege 15 exists (`show running-config |
+      include ^username`). If not, create it first: `username <ADMIN_USER>
+      privilege 15 algorithm-type scrypt secret <NEW_PASSWORD>`. Entering an
+      existing name replaces that user's secret.
+    - >-
+      With AAA the line needs a defined method list (`aaa authentication login
+      default local` or the list you use).
+    - >-
+      Test a new login before you close your session. Change the console while
+      you are on SSH, not the other way round.
+  notes:
+    - "The change is chosen by whether the config has `aaa new-model`."
+  may_cut_access: true
+
+applies_to: console or VTY lines
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "Control vty and tty Lines"
+  cisa: false
 
 examples:
   compliant:

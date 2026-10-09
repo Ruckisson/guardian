@@ -1,30 +1,65 @@
 id: IOS-LOG-002
-title: Logs must be sent to a remote syslog server
-severity: medium
+title: Logs must be sent to at least two remote syslog servers
+severity: high
 
 scope: global
 
 check:
-  must_exist: "^logging (host \\S+|\\d+\\.\\d+\\.\\d+\\.\\d+)"
+  # Two or more different servers in "logging host <addr>" (also with vrf or
+  # ipv6) or the older "logging <ipv4>" lines (DISA STIG).
+  python: remote-syslog-servers
 
 rationale: >
-  The local log buffer is small and lost on reload. A remote syslog server
-  keeps the history, and an attacker who gets on the device cannot erase it.
+  The local log buffer is small and lost on reload. Remote syslog servers
+  keep the history, and an attacker who gets on the device cannot erase it.
+  A second server keeps the logs when the first one is down or unreachable.
 
-remediation: |
-  logging host <syslog-ip>
-  logging trap informational
-  logging source-interface <management-interface>
+remediation:
+  recommended_change:
+    - "logging host <SYSLOG_SERVER_IP_1>"
+    - "logging host <SYSLOG_SERVER_IP_2>"
+    - "logging source-interface <MGMT_INTERFACE>"
+    - "logging trap informational"
+  before_you_apply:
+    - >-
+      Both servers are reachable from the source interface: `ping
+      <SYSLOG_SERVER_IP_1> source <MGMT_INTERFACE>`.
+    - "Firewalls allow UDP 514 from the device to both servers."
+    - "Keep the servers that are already configured; add only the missing ones."
+  notes:
+    - "Management in a VRF: `logging host <SYSLOG_SERVER_IP> vrf <MGMT_VRF>`."
+    - >-
+      Syslog over UDP is clear text; IOS-XE can use `logging host
+      <SYSLOG_SERVER_IP> transport tls`.
+
+references:
+  stig:
+    - id: V-220139
+      stig_id: CISC-ND-001450
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: satisfies
+  nist_800_53: [AU-4]
+  cisco_guide: "Send Logs to a Central Location"
+  cisa: false
 
 examples:
   compliant:
     - |
       logging host 172.16.1.50
+      logging host 172.16.2.50
     - |
       logging 172.16.1.50
+      logging 172.16.2.50
     - |
       logging host 172.16.1.50 vrf MGMT
+      logging host ipv6 2001:db8::50
   non_compliant:
+    - |
+      logging host 172.16.1.50
+    - |
+      logging host 172.16.1.50
+      logging host 172.16.1.50 vrf MGMT
     - |
       logging buffered 64000 informational
     - |

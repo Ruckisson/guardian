@@ -1,6 +1,6 @@
 id: IOS-MGMT-008
 title: AUX port must not start an EXEC session
-severity: medium
+severity: low
 
 scope:
   path: "^line aux "
@@ -13,11 +13,38 @@ rationale: >
   With "no exec" it never gives a command prompt, so it cannot become a back
   door into the device.
 
-remediation: |
-  line aux 0
-   no exec
-   transport input none
-   transport output none
+remediation:
+  recommended_change:
+    - "{block}"
+    - " no exec"
+    - " transport input none"
+    - " transport output none"
+  before_you_apply:
+    - >-
+      Nothing is connected to the AUX port and it is not used for out-of-band
+      access (modem, console server): `show line aux 0`.
+  if_service_needed:
+    text: >-
+      Keep EXEC on the AUX port, but require login and a timeout (with AAA use
+      `login authentication <LIST>` instead of `login local`).
+    commands:
+      - "{block}"
+      - " login local"
+      - " exec-timeout 5 0"
+  may_cut_access: true
+
+applies_to: AUX line
+
+references:
+  stig:
+    - id: V-216661
+      stig_id: CISC-RT-000230
+      benchmark: Cisco IOS XE Router RTR V3R5
+      severity: CAT III
+      relation: satisfies
+  nist_800_53: [AC-4]
+  cisco_guide: "Console and AUX Ports"
+  cisa: false
 
 examples:
   compliant:

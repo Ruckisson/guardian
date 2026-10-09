@@ -7,7 +7,10 @@ parser produced. Evaluation has two steps:
    configuration, or every block that the scope path and filters select;
 2. the rule's check runs in every place and reports the places that fail.
 
-Every failing place becomes one ``Finding``.
+Every failing place becomes one ``Finding``. ``evaluate_rule`` also says
+how the rule came out as a whole: FAIL with any finding, PASS when at least
+one place was checked and passed, N/A when the scope selected nothing or a
+custom check said the rule does not apply.
 """
 
 from __future__ import annotations
@@ -15,9 +18,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from guardian.core.models import ConfigLine, Finding
+from guardian.core.models import ConfigLine, Finding, Status
 from guardian.core.redact import redact
-from guardian.core.rules import custom
+from guardian.core.rules import custom, remediation
+from guardian.core.rules.custom import NotApplicable
 from guardian.core.rules.loader import PLACEHOLDER
 from guardian.core.rules.model import (
     Check,
@@ -44,18 +48,91 @@ class Place:
     is_global: bool = False
 
 
+@dataclass(frozen=True)
+class Outcome:
+    """Result of one rule: its status, why it is N/A, and its findings."""
+
+    status: Status
+    findings: list[Finding]
+    reason: str = ""
+
+
+def evaluate_rule(rule: Rule, config: list[ConfigLine]) -> Outcome:
+    """Evaluate ``rule`` and say whether it passed, failed or does not apply."""
+    places = select(rule.scope, config)
+    if not places:
+        return Outcome(Status.NOT_APPLICABLE, [], _scope_reason(rule))
+
+    findings: list[Finding] = []
+    reasons: list[str] = []
+    checked = False
+    for place in places:
+        result = _skipped(rule.scope, place) or run_check(rule.check, place, config)
+        if isinstance(result, NotApplicable):
+            if result.reason not in reasons:
+                reasons.append(result.reason)
+            continue
+        checked = True
+        findings.extend(_finding(rule, place, target, config) for target in result)
+
+    if findings:
+        return Outcome(Status.FAIL, findings)
+    if checked:
+        return Outcome(Status.PASS, [])
+    return Outcome(Status.NOT_APPLICABLE, [], "; ".join(reasons))
+
+
 def evaluate(rule: Rule, config: list[ConfigLine]) -> list[Finding]:
     """Return one finding for every place in the rule's scope that fails its check."""
-    findings = []
-    for place in select(rule.scope, config):
-        for target in run_check(rule.check, place, config):
-            findings.append(Finding(rule.id, rule.severity, redact(target), rule.title))
-    return findings
+    return evaluate_rule(rule, config).findings
 
 
 def evaluate_all(rules: list[Rule], config: list[ConfigLine]) -> list[Finding]:
     """Evaluate several rules and return all their findings."""
     return [finding for rule in rules for finding in evaluate(rule, config)]
+
+
+def _skipped(scope: Scope, place: Place) -> NotApplicable | None:
+    for skip in scope.skip_if:
+        if skip.block and not skip.block.search(place.line.text):
+            continue
+        if _any_child(place.line, skip.child):
+            return NotApplicable(skip.reason)
+    return None
+
+
+def _context(place: Place, target: str, config: list[ConfigLine]) -> remediation.Context:
+    """What the remediation may use: the block, or the offending global line."""
+    if place.is_global:
+        line = target if target != GLOBAL_TARGET else None
+        return remediation.Context(config, line=line)
+    return remediation.Context(config, block=place.line, label=place.label)
+
+
+def _finding(rule: Rule, place: Place, target: str, config: list[ConfigLine]) -> Finding:
+    return Finding(
+        rule_id=rule.id,
+        severity=rule.severity,
+        target=redact(target, None if place.is_global else place.line.text),
+        title=rule.title,
+        rationale=" ".join(rule.rationale.split()),
+        remediation=remediation.render(rule.remediation, _context(place, target, config)),
+        location=redact(place.label),
+    )
+
+
+def _scope_reason(rule: Rule) -> str:
+    """Readable reason for a scope that selected nothing."""
+    if rule.applies_to:
+        return f"the config has no {rule.applies_to}"
+    scope = rule.scope
+    path = PATH_SEPARATOR.join(p.pattern for p in scope.path)
+    reason = f"no block in the config matches the rule scope ({path}"
+    if scope.has_child:
+        reason += "; with " + ", ".join(p.pattern for p in scope.has_child)
+    if scope.not_has_child:
+        reason += "; without " + ", ".join(p.pattern for p in scope.not_has_child)
+    return reason + ")"
 
 
 # --------------------------------------------------------------------- scope
@@ -90,8 +167,11 @@ def _any_child(block: ConfigLine, pattern: re.Pattern[str]) -> bool:
 # --------------------------------------------------------------------- checks
 
 
-def run_check(check: Check, place: Place, config: list[ConfigLine]) -> list[str]:
+def run_check(check: Check, place: Place, config: list[ConfigLine]) -> list[str] | NotApplicable:
     """Run one check in one place; return the targets of the findings (may be empty).
+
+    A custom check may instead return ``NotApplicable``: the rule does not
+    apply to this config.
 
     The target is the place's label, except for checks that point at offending
     lines in the global configuration: there each offending line is its own
@@ -126,7 +206,10 @@ def run_check(check: Check, place: Place, config: list[ConfigLine]) -> list[str]
             return []
 
         case Python(name):
-            return [] if custom.CHECKS[name](place.line, config) else [place.label]
+            result = custom.CHECKS[name](place.line, config)
+            if isinstance(result, NotApplicable):
+                return result
+            return [] if result else [place.label]
 
     raise TypeError(f"unsupported check: {check!r}")  # pragma: no cover
 

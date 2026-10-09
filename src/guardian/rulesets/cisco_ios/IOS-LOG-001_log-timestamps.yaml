@@ -1,6 +1,6 @@
 id: IOS-LOG-001
 title: Log messages must carry date and time stamps
-severity: low
+severity: medium
 
 scope: global
 
@@ -12,8 +12,25 @@ rationale: >
   put in order, which makes troubleshooting and incident investigation
   much harder. Uptime-based stamps are not enough after a reload.
 
-remediation: |
-  service timestamps log datetime msec localtime show-timezone
+remediation:
+  recommended_change:
+    - "service timestamps log datetime msec localtime show-timezone"
+    - "service timestamps debug datetime msec localtime show-timezone"
+  before_you_apply:
+    - >-
+      `show clock` shows the right time zone. Without `clock timezone` the
+      stamps are in UTC, which is fine but should be known.
+
+references:
+  stig:
+    - id: V-215817
+      stig_id: CISC-ND-000280
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: [AU-3]
+  cisco_guide: "Configure Logging Timestamps"
+  cisa: false
 
 examples:
   compliant:

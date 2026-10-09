@@ -8,11 +8,44 @@ check:
   must_not_exist: "^ip http server$"
 
 rationale: >
-  The HTTP server is not secure and should not be used. HTTP sends everything, login details included, via plaintext. Use HTTPS instead, if it is not needed,
-  disable both.
+  The HTTP server sends everything, login details included, in clear text.
+  Turn it off. If a web interface is needed, use HTTPS limited to management
+  addresses (IOS-MGMT-011).
 
-remediation: |
-  no ip http server
+remediation:
+  recommended_change:
+    - "no ip http server"
+  before_you_apply:
+    - >-
+      Check the config for features that need plain HTTP: `ip admission`,
+      `parameter-map type webauth`, `redirect url`, `telephony-service`.
+    - >-
+      Check whether anything connects: `show ip http server history`, `show ip
+      http server connection`.
+    - >-
+      The HTTPS server (`ip http secure-server`) is not touched; IOS-MGMT-011
+      covers it.
+  if_service_needed:
+    text: >-
+      Web authentication redirects (802.1X/CWA) and some old tools need plain
+      HTTP. Keep it, turn off the HTTP applications and keep the existing login
+      method ({http_auth}). Do not add an access-class while clients must reach
+      the redirect page; manage the device over HTTPS instead.
+    commands:
+      - "ip http authentication {http_auth}"
+      - "ip http active-session-modules none"
+  may_cut_access: true
+
+references:
+  stig:
+    - id: V-215823
+      stig_id: CISC-ND-000470
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: satisfies
+  nist_800_53: [CM-7]
+  cisco_guide: "Disable Unused Services"
+  cisa: true
 
 examples:
   compliant:

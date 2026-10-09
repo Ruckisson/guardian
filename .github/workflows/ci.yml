@@ -24,3 +24,17 @@ jobs:
           ruff format --check .
       - name: Test
         run: pytest
+      - name: Installed package works outside the repository
+        # A real (non-editable) install must ship the rules, CSS and HTML
+        # templates. Exit code 1 only means the fixture has findings.
+        run: |
+          python -m venv /tmp/guardian-venv
+          /tmp/guardian-venv/bin/pip install .
+          cp tests/fixtures/configs/insecure_switch.cfg /tmp/insecure_switch.cfg
+          cd /tmp
+          set +e
+          /tmp/guardian-venv/bin/guardian audit /tmp/insecure_switch.cfg -f html -o /tmp/r.html
+          code=$?
+          set -e
+          test "$code" -eq 1
+          grep -q "<style" /tmp/r.html

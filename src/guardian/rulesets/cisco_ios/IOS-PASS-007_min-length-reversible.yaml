@@ -1,6 +1,6 @@
 id: IOS-PASS-007
-title: Minimum password length must be at least 8 (clear text passwords present)
-severity: high
+title: Minimum password length must be at least 15 (clear text passwords present)
+severity: medium
 
 scope: global
 
@@ -14,22 +14,44 @@ rationale: >
   A short password stored in clear text or as reversible type 7 is the worst
   combination: anyone with the config reads it directly, and anyone without
   it can guess it quickly. Fix the clear text passwords (IOS-PASS-001 to 003)
-  and set a minimum length.
+  and set a minimum length of 15 characters (DISA STIG).
 
-remediation: |
-  security passwords min-length 12
+remediation:
+  recommended_change:
+    - "security passwords min-length 15"
+  before_you_apply:
+    - "Automation and NMS tools that set passwords use at least 15 characters."
+  notes:
+    - >-
+      The limit applies only to passwords set after the change. Existing
+      passwords are not checked; change the short ones.
+    - "Also replace the clear text and type 7 passwords (IOS-PASS-001 to IOS-PASS-003)."
+    - >-
+      Change the credential to a new value, do not reuse the old one: it was
+      readable in the config.
+
+references:
+  stig:
+    - id: V-215826
+      stig_id: CISC-ND-000550
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: []
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:
     - |
-      security passwords min-length 8
+      security passwords min-length 15
       enable password Cisco123
     - |
       hostname SW1
       enable secret 9 $9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM
   non_compliant:
     - |
-      security passwords min-length 6
+      security passwords min-length 8
       enable password Cisco123
     - |
       username admin privilege 15 password 7 0822455D0A16

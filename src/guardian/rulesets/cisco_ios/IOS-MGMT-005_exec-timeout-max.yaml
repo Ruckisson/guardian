@@ -1,40 +1,69 @@
 id: IOS-MGMT-005
-title: Console and VTY session timeouts must be 10 minutes or less
-severity: low
+title: Console and VTY session timeouts must be 5 minutes or less
+severity: high
 
 scope:
   path: "^line (con|vty) "
+  skip_if:
+    # A VTY line with "transport input none" accepts no connections.
+    - block: "^line vty "
+      child: "^transport input none$"
+      reason: the line accepts no connections (transport input none)
 
 check:
-  value:
-    pattern: "^exec-timeout (\\d+)"   # minutes
-    max: 10
-    # IOS default is 10 minutes, so a missing line is compliant.
-    if_missing: pass
+  # "exec-timeout <minutes> [<seconds>]" of at most 5 minutes in total.
+  # "exec-timeout 0 0" never times out, and without the line IOS uses 10
+  # minutes; both fail.
+  python: exec-timeout-max
 
 rationale: >
   Long idle timeouts keep unattended sessions open for longer than needed.
-  Ten minutes matches the IOS default and is a common upper limit.
+  DISA STIG allows at most 5 minutes; the IOS default of 10 minutes is too
+  long, so the line must be set explicitly.
 
-remediation: |
-  line vty 0 15
-   exec-timeout 5 0
+remediation:
+  recommended_change:
+    - "{block}"
+    - " exec-timeout 5 0"
+  before_you_apply:
+    - >-
+      Nobody relies on longer idle sessions on this line, for example a console
+      that shows debug output for a long time.
+
+applies_to: console or VTY lines
+
+references:
+  stig:
+    - id: V-215833
+      stig_id: CISC-ND-000720
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: satisfies
+  nist_800_53: [SC-10]
+  cisco_guide: "EXEC Timeout"
+  cisa: false
 
 examples:
   compliant:
     - |
       line vty 0 4
-       exec-timeout 10 0
-    - |
-      line con 0
        exec-timeout 5 0
     - |
-      line vty 0 4
-       transport input ssh
+      line con 0
+       exec-timeout 3 0
   non_compliant:
     - |
       line vty 0 4
-       exec-timeout 30 0
+       exec-timeout 10 0
     - |
       line con 0
        exec-timeout 60
+    - |
+      line vty 0 4
+       exec-timeout 5 30
+    - |
+      line vty 0 4
+       exec-timeout 0 0
+    - |
+      line vty 0 4
+       transport input ssh

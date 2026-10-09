@@ -1,48 +1,71 @@
 id: IOS-SVC-009
-title: CDP should be disabled, at least on interfaces that do not need it
+title: CDP must be disabled on interfaces that face another network
 severity: low
 
-scope: global
+scope:
+  # Routed interfaces that are up; logical and internal interfaces and
+  # subinterfaces (CDP is set on the parent) are skipped.
+  path: >-
+    ^interface (?!Loopback|Vlan|Tunnel|Null|Port-channel|AppGigabitEthernet|Dialer|Virtual-Template|BDI|Embedded-Service-Engine)[^.]*$
+  has_child: "^ip address (\\d|dhcp|negotiated)"
+  not_has_child: "^shutdown$"
 
 check:
-  # Passes with "no cdp run", or "no cdp enable" on every active physical
-  # interface (Loopback, Vlan, Tunnel, Null, Port-channel, AppGigabitEthernet
-  # and subinterfaces are skipped).
-  python: cdp-disabled
+  # Passes with "no cdp run". Only interfaces with a public IPv4 address
+  # (not RFC 1918, 100.64/10 or link-local), "ip address dhcp" or
+  # "ip address negotiated" are checked; the others are N/A.
+  python: cdp-external
 
 rationale: >
   CDP announces the device model, IOS version, addresses and VLANs to every
-  neighbor, which is useful to an attacker on an access port or a WAN link.
-  It is only a warning: IP phones need CDP for the voice VLAN, and
-  neighbors are handy for troubleshooting. Keep it only where needed.
+  neighbor. On an interface toward the internet, an ISP or another
+  organization that tells strangers exactly which software to attack, and
+  CDP parsing bugs (CDPwn) can be reached from there. Inside the network IP
+  phones, access points and topology tools need CDP, so it stays on.
 
-remediation: |
-  no cdp run
-  Or per interface where it is not needed:
-  interface <interface>
-   no cdp enable
+remediation:
+  recommended_change:
+    - "{block}"
+    - " no cdp enable"
+  before_you_apply:
+    - >-
+      The interface faces an untrusted network (ISP, internet, guest) and has no
+      phones or Cisco APs behind it: `show cdp neighbors {interface} detail`.
+  notes:
+    - >-
+      LLDP shares the same details; turn it off there too with `no lldp
+      transmit` and `no lldp receive` when LLDP runs.
+    - >-
+      A global `no cdp run` also passes, but stops IP phones (voice VLAN, PoE),
+      AP discovery and topology tools.
+
+applies_to: routed interfaces that are up (with an IP address, not shut down)
+
+references:
+  stig:
+    - id: V-216675
+      stig_id: CISC-RT-000370
+      benchmark: Cisco IOS XE Router RTR V3R5
+      severity: CAT III
+      relation: satisfies
+  nist_800_53: [SC-7]
+  cisco_guide: "Disable Unused Services"
+  cisa: false
 
 examples:
   compliant:
     - |
       no cdp run
+      interface GigabitEthernet0/0
+       ip address 203.0.113.2 255.255.255.252
     - |
       interface GigabitEthernet0/0
+       ip address dhcp
        no cdp enable
-      interface GigabitEthernet0/1
-       shutdown
-      interface Vlan10
-       ip address 10.0.10.1 255.255.255.0
-      interface GigabitEthernet0/0.10
-       encapsulation dot1Q 10
-      interface AppGigabitEthernet1/0/1
-       switchport mode trunk
   non_compliant:
     - |
       interface GigabitEthernet0/0
-       ip address 10.0.0.1 255.255.255.0
+       ip address 203.0.113.2 255.255.255.252
     - |
       interface GigabitEthernet0/0
-       no cdp enable
-      interface GigabitEthernet0/1
-       switchport mode access
+       ip address negotiated

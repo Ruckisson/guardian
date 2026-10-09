@@ -5,7 +5,7 @@ severity: high
 scope: global
 
 check:
-  # Passes when "ip http secure-server" is not configured.
+  # N/A when "ip http secure-server" is not configured.
   python: https-server-restricted
 
 rationale: >
@@ -14,19 +14,50 @@ rationale: >
   HTTPS server is needed, allow only management addresses and require
   local or AAA authentication.
 
-remediation: |
-  ip http access-class ipv4 MGMT-ACCESS
-  ip http authentication local
-  Or turn it off: no ip http secure-server
+remediation:
+  recommended_change:
+    - "no ip http secure-server"
+  before_you_apply:
+    - >-
+      Check whether the web UI, RESTCONF, a controller (Catalyst Center) or web
+      authentication uses HTTPS: `show ip http server history`.
+  notes:
+    - >-
+      Turning HTTPS off is the default when nothing uses it: the IOS XE web UI
+      was mass exploited (CVE-2023-20198).
+  if_service_needed:
+    text: >-
+      If HTTPS management is needed, restrict it to management addresses and
+      keep the existing login method ({http_auth}). The ACL ({vty_acl}, taken
+      from the VTY access-class when there is one) must contain all management
+      stations and controllers. With IPv6 add `ip http access-class ipv6
+      <MGMT_ACL_V6>`. Older IOS uses `ip http access-class <MGMT_ACL>` without
+      `ipv4`.
+    commands:
+      - "ip http access-class ipv4 {vty_acl}"
+      - "ip http authentication {http_auth}"
+  may_cut_access: true
+
+references:
+  stig:
+    - id: V-215812
+      stig_id: CISC-ND-000140
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AC-4]
+  cisco_guide: "Encrypt Management Sessions"
+  cisa: false
 
 examples:
   compliant:
     - |
-      no ip http secure-server
-    - |
       ip http secure-server
       ip http access-class ipv4 MGMT-ACCESS
       ip http authentication local
+  not_applicable:
+    - |
+      no ip http secure-server
   non_compliant:
     - |
       ip http secure-server

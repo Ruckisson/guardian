@@ -1,10 +1,7 @@
 """Tests for the Cisco (indentation-based) parser."""
 
-from pathlib import Path
-
+from conftest import FIXTURES
 from guardian.core.parsers.cisco import parse
-
-FIXTURES = Path(__file__).parent / "fixtures" / "configs"
 
 
 def texts(lines):
@@ -130,3 +127,11 @@ def test_other_platform_headers_are_skipped() -> None:
 def test_empty_input() -> None:
     assert parse("") == []
     assert parse("!\n!\nend\n") == []
+
+
+def test_control_characters_become_question_marks() -> None:
+    (interface,) = parse("interface Gi0/1\x1b]0;PWNED\x07\x1b[2J\n description x\x00y\n")
+
+    assert "\x1b" not in interface.text and "\x07" not in interface.text
+    assert interface.text == "interface Gi0/1?]0;PWNED??[2J"
+    assert interface.children[0].text == "description x?y"

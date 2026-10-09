@@ -5,7 +5,7 @@ severity: medium
 scope: global
 
 check:
-  # Passes on routers (no switchport interfaces).
+  # N/A on routers (no switchport interfaces).
   python: dhcp-snooping
 
 rationale: >
@@ -14,11 +14,40 @@ rationale: >
   only on trusted ports (uplinks). It is also the base for Dynamic ARP
   Inspection and IP Source Guard.
 
-remediation: |
-  ip dhcp snooping
-  ip dhcp snooping vlan 10,20
-  interface <uplink>
-   ip dhcp snooping trust
+remediation:
+  recommended_change:
+    - "interface <UPLINK_INTERFACE>"
+    - " ip dhcp snooping trust"
+    - "no ip dhcp snooping information option"
+    - "ip dhcp snooping vlan <VLAN_LIST>"
+    - "ip dhcp snooping"
+  before_you_apply:
+    - >-
+      Find every path to the DHCP server (all uplinks, Port-channels, a local
+      DHCP server port): `show cdp neighbors`, `show etherchannel summary`.
+      Trust each of them (the Port-channel, not its members), never an access
+      port.
+    - >-
+      After the change, check `show ip dhcp snooping statistics` and that
+      clients still get addresses.
+  notes:
+    - >-
+      `no ip dhcp snooping information option` stops the switch inserting option
+      82, which IOS DHCP servers and relays drop.
+    - >-
+      On access ports also limit DHCP packets against starvation: `ip dhcp
+      snooping limit rate 15`.
+
+references:
+  stig:
+    - id: V-220659
+      stig_id: CISC-L2-000130
+      benchmark: Cisco IOS XE Switch L2S V3R2
+      severity: CAT II
+      relation: related
+  nist_800_53: [SC-5]
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:
@@ -27,6 +56,7 @@ examples:
       ip dhcp snooping
       interface Ethernet0/1
        switchport mode access
+  not_applicable:
     - |
       interface GigabitEthernet0/0
        ip address 10.0.0.1 255.255.255.0

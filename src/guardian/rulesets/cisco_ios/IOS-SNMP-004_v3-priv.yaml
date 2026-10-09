@@ -12,9 +12,32 @@ rationale: >
   the user but sends all data in clear text. Only "priv" provides both
   authentication and encryption.
 
-remediation: |
-  snmp-server group <group> v3 priv
-  Recreate the users of the group with auth and priv passwords.
+remediation:
+  recommended_change:
+    - "snmp-server group {snmp_group} v3 priv"
+    - "snmp-server user <USERNAME> {snmp_group} v3 auth sha <AUTH_PASSWORD> priv aes 128 <PRIV_PASSWORD>"
+    - "no snmp-server group {snmp_group} v3 {snmp_level}"
+  before_you_apply:
+    - "List the users of the group: `show snmp user` (they are not in the running config)."
+    - "Update the monitoring system to authPriv with the same passwords at the same time."
+  notes:
+    - "Where the platform supports it, prefer `auth sha-2 256` and `priv aes 256`."
+
+references:
+  stig:
+    - id: V-215841
+      stig_id: CISC-ND-001130
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+    - id: V-215842
+      stig_id: CISC-ND-001140
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AC-17, IA-3]
+  cisco_guide: "SNMP Version 3"
+  cisa: false
 
 examples:
   compliant:

@@ -1,6 +1,6 @@
 id: IOS-SVC-002
 title: Finger service must be disabled
-severity: low
+severity: high
 
 scope: global
 
@@ -11,8 +11,26 @@ rationale: >
   Finger tells anyone who asks which users are logged in and from where,
   which helps an attacker pick targets.
 
-remediation: |
-  no ip finger
+remediation:
+  recommended_change:
+    - when_line: "^service finger"
+      commands:
+        - "no service finger"
+    - commands:
+        - "no ip finger"
+  before_you_apply:
+    - "No tool queries logged-in users with finger."
+
+references:
+  stig:
+    - id: V-215823
+      stig_id: CISC-ND-000470
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: satisfies
+  nist_800_53: [CM-7]
+  cisco_guide: "Disable Unused Services"
+  cisa: false
 
 examples:
   compliant:

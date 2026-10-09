@@ -46,3 +46,11 @@ def test_core_does_not_import_ui_layer() -> None:
                 if any(name == f or name.startswith(f + ".") for f in FORBIDDEN_IN_CORE):
                     offenders.append(f"{path.relative_to(CORE_DIR)}: {name}")
     assert not offenders, f"core imports UI code: {offenders}"
+
+
+def test_version_matches_pyproject() -> None:
+    pyproject = Path(guardian.__file__).parents[2] / "pyproject.toml"
+    text = pyproject.read_text(encoding="utf-8")
+
+    assert f'version = "{guardian.__version__}"' in text
+    assert guardian.__version__ == "0.1.0"

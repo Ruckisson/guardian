@@ -12,8 +12,29 @@ rationale: >
   checks). Without "ip ssh version 2" older IOS runs in compatibility mode
   1.99 and still accepts version 1 clients.
 
-remediation: |
-  ip ssh version 2
+remediation:
+  recommended_change:
+    - "ip ssh version 2"
+  before_you_apply:
+    - >-
+      An RSA key of at least 768 bits exists, 2048 recommended: `show crypto key
+      mypubkey rsa`.
+
+references:
+  stig:
+    - id: V-215844
+      stig_id: CISC-ND-001200
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: related
+    - id: V-215845
+      stig_id: CISC-ND-001210
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: related
+  nist_800_53: [MA-4]
+  cisco_guide: "SSHv2"
+  cisa: false
 
 examples:
   compliant:

@@ -5,7 +5,7 @@ severity: high
 scope: global
 
 check:
-  # Passes on routers (no switchport interfaces), where Smart Install does
+  # N/A on routers (no switchport interfaces), where Smart Install does
   # not exist. When enabled, IOS shows nothing, so look for "no vstack".
   python: smart-install-disabled
 
@@ -14,8 +14,25 @@ rationale: >
   been widely abused (CVE-2018-0171) to read and replace configurations and
   to run code on switches.
 
-remediation: |
-  no vstack
+remediation:
+  recommended_change:
+    - "no vstack"
+  before_you_apply:
+    - "After the change `show vstack config` shows Smart Install disabled."
+  if_service_needed:
+    text: >-
+      Very old images without `no vstack`: block TCP 4786 with an ACL on all L3
+      interfaces.
+    commands:
+      - "ip access-list extended <BLOCK_SMI_ACL>"
+      - " deny tcp any any eq 4786"
+      - " permit ip any any"
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "Disable Unused Services"
+  cisa: true
 
 examples:
   compliant:
@@ -23,6 +40,7 @@ examples:
       no vstack
       interface GigabitEthernet1/0/1
        switchport mode access
+  not_applicable:
     - |
       interface GigabitEthernet0/0
        ip address 10.0.0.1 255.255.255.0

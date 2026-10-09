@@ -1,6 +1,6 @@
 id: IOS-SVC-001
 title: TCP and UDP small servers must be disabled
-severity: medium
+severity: high
 
 scope: global
 
@@ -13,9 +13,23 @@ rationale: >
   network device. UDP echo and chargen can be abused for reflection and
   amplification attacks.
 
-remediation: |
-  no service tcp-small-servers
-  no service udp-small-servers
+remediation:
+  recommended_change:
+    - "no service tcp-small-servers"
+    - "no service udp-small-servers"
+  before_you_apply:
+    - "No test or monitoring tool uses echo, discard, daytime or chargen on the device."
+
+references:
+  stig:
+    - id: V-215823
+      stig_id: CISC-ND-000470
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: satisfies
+  nist_800_53: [CM-7]
+  cisco_guide: "Disable Unused Services"
+  cisa: false
 
 examples:
   compliant:

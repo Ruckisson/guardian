@@ -1,6 +1,6 @@
 id: IOS-SNMP-002
 title: SNMP communities must be read-only
-severity: high
+severity: critical
 
 scope: global
 
@@ -12,10 +12,38 @@ rationale: >
   configuration over SNMP, bypassing login, AAA and command logging.
   SNMPv1/v2c also send the community in clear text.
 
-remediation: |
-  Replace the RW community with a read-only one, or remove it:
-  no snmp-server community <community>
-  snmp-server community <long-random-community> RO <acl>
+remediation:
+  recommended_change:
+    - "no snmp-server community <RW_COMMUNITY>"
+    - "snmp-server community <NEW_COMMUNITY> RO <SNMP_ACL>"
+  before_you_apply:
+    - >-
+      Check whether anything writes over SNMP: `show snmp`, line "Set-request
+      PDUs". A non-zero value means a tool uses write access (often config
+      backups).
+    - "Give the monitoring systems the new community."
+  notes:
+    - >-
+      <RW_COMMUNITY> is the existing community (hidden in this report);
+      <NEW_COMMUNITY> is a new random one.
+    - >-
+      Limit the new community to the OIDs it needs with an SNMP view:
+      `snmp-server view <VIEW_NAME> iso included`, `snmp-server view <VIEW_NAME>
+      ciscoMgmt.394 excluded`, then `snmp-server community <NEW_COMMUNITY> view
+      <VIEW_NAME> RO <SNMP_ACL>`.
+    - >-
+      Change the credential to a new value, do not reuse the old one: it was
+      readable in the config.
+  if_service_needed:
+    text: >-
+      If write access is really needed, use SNMPv3 with authentication,
+      encryption, a write view limited to the needed MIBs and an ACL.
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "SNMP Community Strings"
+  cisa: false
 
 examples:
   compliant:

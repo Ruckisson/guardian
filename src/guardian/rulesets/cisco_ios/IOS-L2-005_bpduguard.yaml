@@ -17,10 +17,49 @@ rationale: >
   BPDU guard shuts the port down instead of letting the new switch join the
   spanning tree, where it could cause loops or become root.
 
-remediation: |
-  spanning-tree portfast bpduguard default
-  interface <access-port>
-   spanning-tree portfast
+remediation:
+  recommended_change:
+    # PortFast turned off on the port: add BPDU guard only, keep PortFast off.
+    - when_block: "^(spanning-tree portfast (edge )?disable|no spanning-tree portfast)$"
+      commands:
+        - "{block}"
+        - " spanning-tree bpduguard enable"
+      notes:
+        - >-
+          PortFast was turned off on purpose: find out what is behind the port
+          first. If it is a switch, the port should be a trunk, not an access
+          port.
+    - commands:
+        - "spanning-tree portfast edge bpduguard default"
+        - "{block}"
+        - " spanning-tree portfast edge"
+  before_you_apply:
+    - >-
+      The port receives no BPDUs: `show spanning-tree interface {interface}
+      detail` shows "BPDU: received 0".
+    - >-
+      Only end devices are connected, no switch or bridging AP; a BPDU puts the
+      port into err-disabled state.
+  notes:
+    - >-
+      Older IOS (before 15.2(2)E): `spanning-tree portfast bpduguard default`
+      and `spanning-tree portfast`.
+    - >-
+      Automatic recovery (`errdisable recovery cause bpduguard`) is not
+      recommended: it lets an attacker try again.
+
+applies_to: active access ports (switchport mode access, not shut down)
+
+references:
+  stig:
+    - id: V-220656
+      stig_id: CISC-L2-000100
+      benchmark: Cisco IOS XE Switch L2S V3R2
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: [SC-5]
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:

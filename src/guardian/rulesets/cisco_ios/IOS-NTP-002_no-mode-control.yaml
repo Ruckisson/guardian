@@ -12,8 +12,23 @@ rationale: >
   and have been abused for amplification attacks. Normal time sync does not
   need them.
 
-remediation: |
-  no ntp allow mode control
+remediation:
+  recommended_change:
+    - "no ntp allow mode control"
+  before_you_apply:
+    - "No monitoring tool queries this device with `ntpq` (mode 6)."
+  if_service_needed:
+    text: >-
+      Older IOS without this command: restrict who can talk NTP to the device.
+    commands:
+      - "ntp access-group peer <NTP_SERVERS_ACL>"
+      - "ntp access-group serve-only <NTP_CLIENTS_ACL>"
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "NTP Control Messages"
+  cisa: false
 
 examples:
   compliant:

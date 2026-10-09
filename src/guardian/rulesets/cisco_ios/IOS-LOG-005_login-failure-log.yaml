@@ -11,9 +11,25 @@ rationale: >
   Without it failed logins leave no trace, so password guessing goes
   unnoticed until it succeeds.
 
-remediation: |
-  login on-failure log
-  login on-success log
+remediation:
+  recommended_change:
+    - "login on-failure log"
+  before_you_apply:
+    - >-
+      After the change, try one failed login and check that
+      `SEC_LOGIN-4-LOGIN_FAILED` appears in `show logging`. Some older IOS log
+      it only together with `login block-for` (IOS-PASS-010).
+
+references:
+  stig:
+    - id: V-215849
+      stig_id: CISC-ND-001260
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AU-12]
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:

@@ -15,8 +15,17 @@ rationale: >
   More retries per connection let a password guesser try more passwords
   before it has to reconnect.
 
-remediation: |
-  ip ssh authentication-retries 3
+remediation:
+  recommended_change:
+    - "ip ssh authentication-retries 3"
+  before_you_apply:
+    - "Tools that log in over SSH have the right credentials and do not need extra retries."
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "Encrypt Management Sessions"
+  cisa: false
 
 examples:
   compliant:

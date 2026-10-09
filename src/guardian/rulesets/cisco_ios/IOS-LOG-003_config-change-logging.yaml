@@ -13,12 +13,33 @@ rationale: >
   what and when. With "notify syslog" each change also goes to the syslog
   server.
 
-remediation: |
-  archive
-   log config
-    logging enable
-    hidekeys
-    notify syslog contenttype plaintext
+remediation:
+  recommended_change:
+    - "archive"
+    - " log config"
+    - "  logging enable"
+    - "  hidekeys"
+    - "  notify syslog contenttype plaintext"
+  before_you_apply:
+    - "The syslog server can take the extra messages: every configuration command is logged."
+  notes:
+    - "Keep `hidekeys` together with `notify syslog`, otherwise typed passwords go to syslog."
+
+references:
+  stig:
+    - id: V-215819
+      stig_id: CISC-ND-000330
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: satisfies
+    - id: V-215850
+      stig_id: CISC-ND-001270
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AU-12, AU-3]
+  cisco_guide: "Configuration Change Notification and Logging"
+  cisa: false
 
 examples:
   compliant:

@@ -18,11 +18,39 @@ rationale: >
   then reach every VLAN on the trunk (VLAN hopping).
   Limitation: ports with no switchport line at all are not checked.
 
-remediation: |
-  interface <access-port>
-   switchport mode access
-  interface <trunk-port>
-   switchport mode trunk
+remediation:
+  recommended_change:
+    - "{block}"
+    - " switchport mode {switchport_mode}"
+  before_you_apply:
+    - >-
+      Check the operational mode and keep it: `show interfaces {interface}
+      switchport` (line "Operational Mode").
+    - >-
+      If you set access, `show interfaces trunk` must not list this port,
+      otherwise everything behind it loses its VLANs.
+  notes:
+    - >-
+      The mode is guessed from the port's other lines (`switchport access vlan`
+      or `switchport trunk ...`); <ACCESS_OR_TRUNK> means there was no hint.
+
+applies_to: switch ports (interfaces with switchport lines)
+
+references:
+  stig:
+    - id: V-220671
+      stig_id: CISC-L2-000250
+      benchmark: Cisco IOS XE Switch L2S V3R2
+      severity: CAT II
+      relation: related
+    - id: V-220666
+      stig_id: CISC-L2-000200
+      benchmark: Cisco IOS XE Switch L2S V3R2
+      severity: CAT II
+      relation: related
+  nist_800_53: [CM-6]
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:
@@ -35,10 +63,6 @@ examples:
        switchport trunk encapsulation dot1q
        switchport mode trunk
     - |
-      interface GigabitEthernet1/0/24
-       no switchport
-       ip address 10.0.0.1 255.255.255.252
-    - |
       interface GigabitEthernet1/0/3
        switchport private-vlan host-association 100 101
        switchport mode private-vlan host
@@ -46,6 +70,11 @@ examples:
       interface GigabitEthernet1/0/4
        switchport access vlan 50
        switchport mode dot1q-tunnel
+  not_applicable:
+    - |
+      interface GigabitEthernet1/0/24
+       no switchport
+       ip address 10.0.0.1 255.255.255.252
   non_compliant:
     - |
       interface Ethernet0/1

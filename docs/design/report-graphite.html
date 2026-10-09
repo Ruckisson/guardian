@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Guardian audit report: SW-ACC-01</title>
+<style>
+:root{--ink:#1b1f24;--muted:#5f6670;--line:#d9dce0;--soft:#f4f5f7;--accent:#1d3557}
+body{margin:0;background:#e9ebee;color:var(--ink);font:14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif}
+.sheet{max-width:860px;margin:32px auto;background:#fff;padding:48px 56px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.conf{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);border-bottom:2px solid var(--accent);padding-bottom:8px}
+.conf strong{color:#a4161a}
+h1{font:600 30px/1.2 Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;margin:28px 0 4px;color:var(--accent)}
+.sub{color:var(--muted);margin:0 0 24px}
+h2{font:600 19px/1.3 Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;color:var(--accent);margin:36px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+dl.meta{display:grid;grid-template-columns:200px 1fr;gap:4px 16px;margin:0;font-size:13px}
+dl.meta dt{color:var(--muted)} dl.meta dd{margin:0}
+.mono{font-family:ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;font-size:12px;word-break:break-all}
+.verdict{background:var(--soft);border-left:4px solid #a4161a;padding:12px 16px;margin:0 0 20px;font-weight:600}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:32px;align-items:start}
+table.summary{border-collapse:collapse;width:100%;font-size:13px}
+.summary th,.summary td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+.summary thead th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.summary .n{text-align:right;font-variant-numeric:tabular-nums}
+.summary .fail{font-weight:700}
+.summary .total th,.summary .total td{border-top:2px solid var(--ink);border-bottom:0;font-weight:700}
+.sev{font-size:12px;font-weight:600}
+.sev::before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:0}
+.sev-high::before{background:#d03b3b} .sev-medium::before{background:#ec835a} .sev-low::before{background:#fab219}
+figure{margin:0} figcaption{font-size:12px;color:var(--muted);margin-bottom:8px}
+.legend{list-style:none;padding:0;margin:8px 0 0;display:flex;gap:16px;font-size:12px;color:var(--muted)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.finding{border-top:1px solid var(--line);padding:18px 0 6px}
+.finding h3{font-size:15px;margin:0 0 8px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.finding .num{color:var(--muted);font-weight:400;min-width:22px}
+.finding .id{font:600 12px ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;color:var(--muted)}
+.facts{display:grid;grid-template-columns:120px 1fr;gap:4px 16px;margin:0 0 10px 32px;font-size:13px}
+.facts dt{color:var(--muted)} .facts dd{margin:0}
+.fix{margin:0 0 8px 32px;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.fix-warn{margin:0;padding:8px 12px;background:#fff6db;font-size:12.5px;color:#5c4400}
+.fix pre{margin:0;padding:10px 12px;background:#fbfbfc;font-size:12.5px;overflow-x:auto}
+details.appendix{margin-top:8px;border:1px solid var(--line);border-radius:4px;padding:10px 14px}
+details.appendix summary{font-weight:600}
+ul.na,ul.passed{margin:10px 0 0;padding-left:18px;font-size:13px} ul.na li{margin-bottom:6px}
+.why{color:var(--muted)} code{font-size:12px}
+footer{margin-top:40px;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}
+@media screen and (max-width:700px){.sheet{padding:24px 16px;margin:0} .two{grid-template-columns:1fr}
+  dl.meta,.facts{grid-template-columns:1fr} .facts,.fix{margin-left:0}}
+@media print{.sheet{box-shadow:none;margin:0;padding:0;max-width:none}}
+
+.fix section{padding:10px 12px}
+.fix section + section{border-top:1px solid #e3e4e6}
+.fix h4{margin:0 0 6px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:#5f6670;font-weight:600}
+.fix section pre{margin:0;border:1px solid #e3e4e6;border-radius:4px}
+.fix-note{margin:6px 0 0;font-size:12.5px;color:#5f6670}
+ul.checks{margin:0;padding-left:18px;font-size:13px} ul.checks li{margin:2px 0}
+p.alt{margin:0 0 6px;font-size:13px}
+mark.ph{background:#fff1a8;color:#5c4400;border-radius:2px;padding:0 2px;font-weight:700}
+.risk{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;padding:2px 8px;border-radius:3px;border:1px solid;white-space:nowrap}
+.risk-lockout{color:#9b1c1c;border-color:#d03b3b;background:#fbe9e9}
+.risk-ends{color:#1d4f9c;border-color:#5b8fd9;background:#eaf1fc}
+.guide p{margin:0} .guide ul.tips{margin:8px 0 0;padding-left:0;list-style:none} .guide ul.tips li{margin:6px 0}
+.fix-label{margin:0;padding:6px 12px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5f6670;border-bottom:1px solid #e3e4e6}
+.score{display:flex;align-items:baseline;gap:12px;margin-bottom:8px}
+.score-num{font-size:40px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.score-txt{font-size:13px;color:var(--muted)} .score-txt b{color:var(--ink);font-weight:600}
+.fn{font-size:11.5px;color:var(--muted);margin:6px 0 0}
+details.why-sec > summary{font-weight:600}
+details.why-sec svg.chart{max-width:600px;display:block}
+.why-cap{margin:12px 0 10px;font-size:13.5px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0 8px}
+.stat{border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.stat b{display:block;font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:12.5px} .stat small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.sources{font-size:11.5px;color:var(--muted);margin:8px 0 0;padding-left:16px}
+.sources a{color:inherit}
+@media screen and (max-width:700px){.stats{grid-template-columns:1fr}}
+.banner{border:1px solid #e3b341;background:#fff6db;color:#5c4400;border-radius:6px;padding:10px 14px;margin:0 0 14px;font-size:13.5px}
+*{box-sizing:border-box}
+pre,code{font-family:ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace}
+summary{cursor:pointer}
+@media print{
+  @page{size:A4;margin:14mm 12mm}
+  :root{color-scheme:light}
+  html,body{background:#fff!important;color:#000!important}
+  .no-print{display:none!important}
+  details::details-content{content-visibility:visible;display:block}
+  .card,tr,.fix section,.facts,pre{break-inside:avoid} h3{break-after:avoid}
+  a{color:inherit;text-decoration:none}
+  pre{white-space:pre-wrap;overflow:visible!important;word-break:break-word}
+}
+@media screen{
+:root{--ink:#e8e6e1;--muted:#a3a09a;--line:#2f3238;--soft:#22252a;--accent:#d9b26f}
+body{background:#0f1012;font-family:Seravek, "Gill Sans Nova", Ubuntu, Calibri, "DejaVu Sans", sans-serif}
+.sheet{background:#18191d;box-shadow:0 0 0 1px #24262b,0 24px 60px rgba(0,0,0,.55)}
+h1,h2{font-family:Seravek, "Gill Sans Nova", Ubuntu, Calibri, "DejaVu Sans", sans-serif;font-weight:600;letter-spacing:0}
+h1{font-size:32px}
+.sheet .fix{border-color:#2f3238}
+.sheet .fix section + section{border-top-color:#2f3238}
+.sheet .fix h4,.sheet .fix-note{color:#a3a09a}
+.sheet .fix section pre{border-color:#2f3238;background:#111214}
+.risk-lockout{color:#ff9b94;background:rgba(208,59,59,.16);border-color:#8f3030}
+.risk-ends{color:#9cc2ff;background:rgba(91,143,217,.14);border-color:#3c5f96}
+mark.ph{background:#4a3d12;color:#ffd866}
+.sheet .check{border-bottom-color:#2f3238} .sheet ol.steps pre{border-color:#2f3238}
+.guide code{color:#ffe7a8}
+.conf{border-bottom-color:#d9b26f} .conf strong{color:#ff8f87}
+.verdict{border-left-color:#ff6b61}
+.fix pre{background:#111214;color:#ece9e2}
+a{color:#d9b26f}
+
+.sev-high{color:#ff9b94} .sev-medium{color:#f6b08f} .sev-low{color:#f7cf6b}
+.banner,.warnbar,.warn{background:#2a2312;border-color:#6b5520;color:#f0d28a}
+.fix{border-color:#6b5520} .fix-warn{background:#2a2312;color:#f0d28a}
+.stat{background:rgba(255,255,255,.02)}
+}
+@media print{svg.chart text{fill:#1f2328!important} svg.chart line{stroke:#ddd!important}}
+h1,h2{font-family:Seravek, "Gill Sans Nova", Ubuntu, Calibri, "DejaVu Sans", sans-serif}</style>
+</head>
+<body>
+<main class="sheet">
+<div class="conf"><span><strong>Confidential</strong> · contains device configuration details</span><span>Guardian 0.1</span></div>
+<h1>Configuration audit report</h1>
+<p class="sub">SW-ACC-01 · Cisco IOS 15.2 · 2026-10-08 16:31:07 +02:00</p>
+<dl class="meta"><dt>Hostname</dt><dd class="">SW-ACC-01</dd><dt>IOS version (from config)</dt><dd class="">15.2</dd><dt>Platform</dt><dd class="">Cisco IOS</dd><dt>Input file</dt><dd class="mono">sw-acc-01_running-config.txt</dd><dt>SHA-256 of input</dt><dd class="mono">aa066817ee8c61757d5d8b0819713805f630c67a2a0dd2bdc194314b2f773b5b</dd><dt>Generated</dt><dd class="">2026-10-08 16:31:07 +02:00</dd><dt>Guardian</dt><dd class="">0.1</dd></dl>
+<h2>1. Summary</h2>
+<p class="verdict">Not compliant. 12 of 19 applicable rules failed, 5 of them high severity.</p>
+<div class="two">
+<table class="summary"><thead><tr><th scope="col">Severity</th><th scope="col">Fail</th><th scope="col">Pass</th><th scope="col">N/A</th><th scope="col">Rules</th></tr></thead><tbody><tr><th scope="row"><span class="sev sev-high">High</span></th><td class="n fail">5</td><td class="n">2</td><td class="n">0</td><td class="n">7</td></tr><tr><th scope="row"><span class="sev sev-medium">Medium</span></th><td class="n fail">6</td><td class="n">3</td><td class="n">2</td><td class="n">11</td></tr><tr><th scope="row"><span class="sev sev-low">Low</span></th><td class="n fail">1</td><td class="n">2</td><td class="n">0</td><td class="n">3</td></tr><tr class="total"><th scope="row">Total</th><td class="n fail">12</td><td class="n">7</td><td class="n">2</td><td class="n">21</td></tr></tbody></table>
+<figure><div class="score"><div class="score-num">37&nbsp;%</div><div class="score-txt"><b>compliance score</b><br>7 of 19 evaluated rules passed</div></div><svg viewBox="0 0 320 10" width="100%" height="10" role="img" class="chart" aria-label="7 of 19 evaluated rules passed" preserveAspectRatio="none"><rect x="0" y="0" width="116.9" height="10" rx="3" fill="#0ca30c"><title>7 passed</title></rect><rect x="118.9" y="0" width="201.1" height="10" rx="3" fill="#d03b3b"><title>12 failed</title></rect></svg><p class="fn">Score = passed / evaluated rules. Not applicable rules are not counted.</p><figcaption style="margin-top:18px">Failed rules by severity</figcaption><svg viewBox="0 0 480 74" width="100%" role="img" class="chart" aria-label="Failed rules by severity"><text x="0" y="13" font-size="12" fill="#e8e6e1">High</text><rect x="70.0" y="0" width="318.3" height="18" rx="3" fill="#d03b3b"><title>High: 5 failed</title></rect><text x="394.3" y="13" font-size="12" font-weight="600" fill="#e8e6e1">5</text><text x="0" y="41" font-size="12" fill="#e8e6e1">Medium</text><rect x="70.0" y="28" width="382.0" height="18" rx="3" fill="#ec835a"><title>Medium: 6 failed</title></rect><text x="458.0" y="41" font-size="12" font-weight="600" fill="#e8e6e1">6</text><text x="0" y="69" font-size="12" fill="#e8e6e1">Low</text><rect x="70.0" y="56" width="63.7" height="18" rx="3" fill="#fab219"><title>Low: 1 failed</title></rect><text x="139.7" y="69" font-size="12" font-weight="600" fill="#e8e6e1">1</text></svg></figure>
+</div>
+<figure style="margin-top:28px"><figcaption>Compliance by area, worst first (passed / evaluated)</figcaption><svg viewBox="0 0 760 216" width="100%" role="img" class="chart" aria-label="Compliance by area, worst first"><text x="0" y="12" font-size="12" fill="#e8e6e1">Layer 2</text><rect x="170.0" y="0" width="546.0" height="16" rx="3" fill="#d03b3b"><title>L2: 2 of 2 failed</title></rect><text x="724" y="12" font-size="11.5" fill="#a3a09a">0/2</text><text x="0" y="37" font-size="12" fill="#e8e6e1">AAA</text><rect x="170.0" y="25" width="546.0" height="16" rx="3" fill="#d03b3b"><title>AAA: 1 of 1 failed</title></rect><text x="724" y="37" font-size="11.5" fill="#a3a09a">0/1</text><text x="0" y="62" font-size="12" fill="#e8e6e1">Logging</text><rect x="170.0" y="50" width="546.0" height="16" rx="3" fill="#d03b3b"><title>LOG: 1 of 1 failed</title></rect><text x="724" y="62" font-size="11.5" fill="#a3a09a">0/1</text><text x="0" y="87" font-size="12" fill="#e8e6e1">Time / NTP</text><rect x="170.0" y="75" width="546.0" height="16" rx="3" fill="#d03b3b"><title>NTP: 1 of 1 failed</title></rect><text x="724" y="87" font-size="11.5" fill="#a3a09a">0/1</text><text x="0" y="112" font-size="12" fill="#e8e6e1">Passwords</text><rect x="170.0" y="100" width="362.0" height="16" rx="3" fill="#d03b3b"><title>PASS: 2 of 3 failed</title></rect><rect x="534.0" y="100" width="182.0" height="16" rx="3" fill="#0ca30c"><title>PASS: 1 of 3 passed</title></rect><text x="724" y="112" font-size="11.5" fill="#a3a09a">1/3</text><text x="0" y="137" font-size="12" fill="#e8e6e1">SNMP</text><rect x="170.0" y="125" width="362.0" height="16" rx="3" fill="#d03b3b"><title>SNMP: 2 of 3 failed</title></rect><rect x="534.0" y="125" width="182.0" height="16" rx="3" fill="#0ca30c"><title>SNMP: 1 of 3 passed</title></rect><text x="724" y="137" font-size="11.5" fill="#a3a09a">1/3</text><text x="0" y="162" font-size="12" fill="#e8e6e1">Management access</text><rect x="170.0" y="150" width="325.6" height="16" rx="3" fill="#d03b3b"><title>MGMT: 3 of 5 failed</title></rect><rect x="497.6" y="150" width="218.4" height="16" rx="3" fill="#0ca30c"><title>MGMT: 2 of 5 passed</title></rect><text x="724" y="162" font-size="11.5" fill="#a3a09a">2/5</text><text x="0" y="187" font-size="12" fill="#e8e6e1">Services</text><rect x="170.0" y="175" width="546.0" height="16" rx="3" fill="#0ca30c"><title>SVC: 2 of 2 passed</title></rect><text x="724" y="187" font-size="11.5" fill="#a3a09a">2/2</text><text x="0" y="212" font-size="12" fill="#e8e6e1">Interfaces</text><rect x="170.0" y="200" width="546.0" height="16" rx="3" fill="#0ca30c"><title>IF: 1 of 1 passed</title></rect><text x="724" y="212" font-size="11.5" fill="#a3a09a">1/1</text></svg><ul class="legend"><li><span class="sw" style="background:#d03b3b"></span>Fail</li><li><span class="sw" style="background:#0ca30c"></span>Pass</li></ul></figure>
+<h2>2. Findings</h2>
+<p>Failed rules, most severe first. Passwords, secrets, hashes and SNMP communities are never shown; they appear as &lt;redacted&gt;.</p>
+<div class="banner guide" role="note"><p><strong>About the suggested changes.</strong> They are a
+suggestion, not a script. Review them, replace every highlighted <mark class="ph">&lt;PLACEHOLDER&gt;</mark>,
+and try them in a lab first. Order matters.</p>
+<ul class="tips">
+<li><span class="risk risk-lockout">&#9888; May cut your access</span> run <code>reload in 10</code> before the change,
+and <code>reload cancel</code> once you have logged in again from a new session.</li>
+<li><span class="risk risk-ends">&#9888; Change both ends</span> the device on the other side of the link needs the
+matching change at the same time.</li>
+<li>Nothing here runs <code>write memory</code>. Save only after you have checked the result.</li>
+</ul></div>
+<section class="finding">
+<h3><span class="num">1.</span><span class="sev sev-high">High</span><span>VTY lines must accept SSH only</span><span class="id">IOS-MGMT-001</span><span class="risk risk-lockout">&#9888; May cut your access</span></h3>
+<dl class="facts"><dt>Area</dt><dd>Management access (MGMT)</dd>
+<dt>Location</dt><dd class="mono">line vty 0 4</dd>
+<dt>Config line</dt><dd class="mono">transport input telnet ssh</dd>
+<dt>Why it matters</dt><dd>Telnet sends the login and the whole session in clear text.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>ip domain name <mark class="ph">&lt;DOMAIN&gt;</mark>
+crypto key generate rsa modulus 2048
+ip ssh version 2
+line vty 0 4
+ transport input ssh</pre><p class="fix-note">Skip the first two lines if an RSA key of 2048 bits or more already exists.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>SSH already works: <code>show ip ssh</code> shows SSH enabled, version 2.0, and you can log in over SSH now.</li><li>An RSA key exists: <code>show crypto key mypubkey rsa</code>.</li><li>No tool still uses telnet (NMS, backup scripts, terminal servers): <code>show users</code>, <code>show tcp brief</code>.</li></ul></section></div>
+</section><section class="finding">
+<h3><span class="num">2.</span><span class="sev sev-high">High</span><span>HTTP server must be disabled, use HTTPS instead</span><span class="id">IOS-MGMT-006</span></h3>
+<dl class="facts"><dt>Area</dt><dd>Management access (MGMT)</dd>
+<dt>Location</dt><dd class="mono">(global)</dd>
+<dt>Config line</dt><dd class="mono">ip http server</dd>
+<dt>Why it matters</dt><dd>The web interface over plain HTTP sends credentials in clear text. The IOS XE web UI was mass-exploited in 2023 (CVE-2023-20198).</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>no ip http server
+no ip http secure-server</pre><p class="fix-note">Turns off the web interface completely. Recommended when nothing uses it.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>No feature in the config needs it: <code>ip admission</code>, <code>parameter-map type webauth</code>, <code>redirect url</code>, <code>telephony-service</code>.</li><li>Nothing connects to it: <code>show ip http server history</code>, <code>show ip http server connection</code>.</li></ul></section><section><h4>If the service is needed</h4><p class="alt">If the web interface is needed, move it to HTTPS and restrict it:</p><pre>ip http secure-server
+ip http authentication local
+ip http access-class ipv4 <mark class="ph">&lt;MGMT_ACL&gt;</mark>
+no ip http server</pre><p class="fix-note">Older IOS: <code>ip http access-class <mark class="ph">&lt;MGMT_ACL&gt;</mark></code>. If web authentication (802.1X, guest portal) needs HTTP redirects, keep <code>ip http server</code> and add <code>ip http active-session-modules none</code>.</p></section></div>
+</section><section class="finding">
+<h3><span class="num">3.</span><span class="sev sev-high">High</span><span>Enable password must not be used, use enable secret</span><span class="id">IOS-PASS-001</span></h3>
+<dl class="facts"><dt>Area</dt><dd>Passwords (PASS)</dd>
+<dt>Location</dt><dd class="mono">(global)</dd>
+<dt>Config line</dt><dd class="mono">enable password &lt;redacted&gt;</dd>
+<dt>Why it matters</dt><dd>The enable password is stored in clear text or with reversible type 7 encoding. Anyone who sees the config or a backup can read it.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>enable algorithm-type scrypt secret <mark class="ph">&lt;NEW_PASSWORD&gt;</mark>
+no enable password</pre><p class="fix-note">Older IOS without scrypt: <code>enable secret <mark class="ph">&lt;NEW_PASSWORD&gt;</mark></code>.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>The IOS supports scrypt: <code>enable algorithm-type ?</code>.</li><li>Update the enable password in automation and NMS tools.</li><li>Set a new value. The old one was readable in the config, so treat it as leaked.</li></ul></section></div>
+</section><section class="finding">
+<h3><span class="num">4.</span><span class="sev sev-high">High</span><span>Local users must use secret, not password</span><span class="id">IOS-PASS-002</span><span class="risk risk-lockout">&#9888; May cut your access</span></h3>
+<dl class="facts"><dt>Area</dt><dd>Passwords (PASS)</dd>
+<dt>Location</dt><dd class="mono">(global)</dd>
+<dt>Config line</dt><dd class="mono">username admin privilege 15 password 0 &lt;redacted&gt;</dd>
+<dt>Why it matters</dt><dd>The account password is stored reversibly. A privilege 15 account exposed this way gives full control of the device.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>no username admin
+username admin privilege 15 algorithm-type scrypt secret <mark class="ph">&lt;NEW_PASSWORD&gt;</mark></pre><p class="fix-note">IOS won&#x27;t add a secret to a user that has a password, so the account is removed and added again.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>Another admin account or the console is available in case the paste stops halfway.</li><li>Re-add any other options from the original line (autocommand, view).</li><li>Set a new value. The old one was readable in the config, so treat it as leaked.</li></ul></section></div>
+</section><section class="finding">
+<h3><span class="num">5.</span><span class="sev sev-high">High</span><span>SNMP communities must be read-only</span><span class="id">IOS-SNMP-002</span></h3>
+<dl class="facts"><dt>Area</dt><dd>SNMP (SNMP)</dd>
+<dt>Location</dt><dd class="mono">(global)</dd>
+<dt>Config line</dt><dd class="mono">snmp-server community &lt;redacted&gt; RW</dd>
+<dt>Why it matters</dt><dd>A read-write community lets anyone who knows it change the configuration or copy it off the device over SNMP.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>no snmp-server community <mark class="ph">&lt;RW_COMMUNITY&gt;</mark>
+snmp-server community <mark class="ph">&lt;NEW_COMMUNITY&gt;</mark> RO <mark class="ph">&lt;SNMP_ACL&gt;</mark></pre><p class="fix-note"><mark class="ph">&lt;RW_COMMUNITY&gt;</mark> is the existing community, hidden in this report.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>Nobody writes over SNMP: in <code>show snmp</code>, the Set-request PDUs counter is 0.</li><li>Move the monitoring system to the new community at the same time.</li><li>Set a new value. The old one was readable in the config, so treat it as leaked.</li></ul></section><section><h4>If the service is needed</h4><p class="alt">If a tool needs write access, use SNMPv3 with a write view limited to the MIBs it needs, plus an ACL.</p></section></div>
+</section><section class="finding">
+<h3><span class="num">6.</span><span class="sev sev-medium">Medium</span><span>AAA must be enabled with aaa new-model</span><span class="id">IOS-AAA-001</span><span class="risk risk-lockout">&#9888; May cut your access</span></h3>
+<dl class="facts"><dt>Area</dt><dd>AAA (AAA)</dd>
+<dt>Location</dt><dd class="mono">(global)</dd>
+<dt>Config line</dt><dd class="mono">not in config: aaa new-model</dd>
+<dt>Why it matters</dt><dd>Without AAA the device relies on line and local passwords only: no central authentication and no command accounting.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>username <mark class="ph">&lt;ADMIN_USER&gt;</mark> privilege 15 algorithm-type scrypt secret <mark class="ph">&lt;NEW_PASSWORD&gt;</mark>
+aaa new-model
+aaa authentication login default local
+aaa authorization exec default local</pre><p class="fix-note">Skip the first line if a local privilege 15 user with a secret already exists. Then log in from a new session before you close the current one.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>A local privilege 15 user with a secret exists: <code>show running-config | include ^username</code>.</li><li>Console access is available as a fallback.</li></ul></section></div>
+</section><section class="finding">
+<h3><span class="num">7.</span><span class="sev sev-medium">Medium</span><span>Active access ports must have port security or 802.1X/MAB</span><span class="id">IOS-L2-001</span></h3>
+<dl class="facts"><dt>Area</dt><dd>Layer 2 (L2)</dd>
+<dt>Location</dt><dd class="mono">interface GigabitEthernet0/1, interface GigabitEthernet0/2</dd>
+<dt>Config line</dt><dd class="mono">switchport mode access<br>switchport mode access</dd>
+<dt>Why it matters</dt><dd>Any device can be plugged into these ports, and the MAC address table can be flooded.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>interface GigabitEthernet0/1
+ switchport mode access
+ switchport port-security maximum <mark class="ph">&lt;MAX_MAC&gt;</mark>
+ switchport port-security violation restrict
+ switchport port-security aging time 10
+ switchport port-security aging type inactivity
+ switchport port-security
+interface GigabitEthernet0/2
+ switchport mode access
+ switchport port-security maximum <mark class="ph">&lt;MAX_MAC&gt;</mark>
+ switchport port-security violation restrict
+ switchport port-security aging time 10
+ switchport port-security aging type inactivity
+ switchport port-security</pre><p class="fix-note"><mark class="ph">&lt;MAX_MAC&gt;</mark>: 1 for a single PC, 3 for an IP phone with a PC behind it, more for hypervisors.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>Count the MAC addresses on each port: <code>show mac address-table interface Gi0/1</code>.</li><li>Check what is connected: <code>show cdp neighbors Gi0/1 detail</code> (phones, APs, small switches).</li></ul></section><section><h4>If the service is needed</h4><p class="alt">If the network uses 802.1X or MAB, configure that instead. It needs a RADIUS server.</p></section></div>
+</section><section class="finding">
+<h3><span class="num">8.</span><span class="sev sev-medium">Medium</span><span>Trunk native VLAN must not be VLAN 1</span><span class="id">IOS-L2-006</span><span class="risk risk-ends">&#9888; Change both ends</span></h3>
+<dl class="facts"><dt>Area</dt><dd>Layer 2 (L2)</dd>
+<dt>Location</dt><dd class="mono">interface GigabitEthernet0/24</dd>
+<dt>Config line</dt><dd class="mono">switchport mode trunk</dd>
+<dt>Why it matters</dt><dd>Untagged traffic on the trunk lands in VLAN 1, which makes VLAN hopping with double-tagged frames possible.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>vlan <mark class="ph">&lt;NATIVE_VLAN&gt;</mark>
+ name NATIVE-UNUSED
+interface GigabitEthernet0/24
+ switchport trunk native vlan <mark class="ph">&lt;NATIVE_VLAN&gt;</mark></pre><p class="fix-note">Use one unused VLAN ID across the network, and put it on no access port.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>Find the neighbour: <code>show cdp neighbors Gi0/24 detail</code>.</li><li>Nothing relies on untagged traffic on this trunk (APs, hypervisors, phones).</li></ul></section><section><h4>If the service is needed</h4><p class="alt">If you can&#x27;t change both ends now, <code>vlan dot1q tag native</code> tags the native VLAN too. The neighbour must support it and have it configured.</p></section></div>
+</section><section class="finding">
+<h3><span class="num">9.</span><span class="sev sev-medium">Medium</span><span>VTY lines must restrict source addresses with an access-class</span><span class="id">IOS-MGMT-002</span><span class="risk risk-lockout">&#9888; May cut your access</span></h3>
+<dl class="facts"><dt>Area</dt><dd>Management access (MGMT)</dd>
+<dt>Location</dt><dd class="mono">line vty 0 4</dd>
+<dt>Config line</dt><dd class="mono">no access-class under the line</dd>
+<dt>Why it matters</dt><dd>Management logins are not limited by source address. Any host that can reach the switch can try to log in.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>ip access-list standard <mark class="ph">&lt;MGMT_ACL&gt;</mark>
+ permit <mark class="ph">&lt;MGMT_NETWORK&gt;</mark> <mark class="ph">&lt;WILDCARD&gt;</mark>
+ deny any log
+line vty 0 4
+ access-class <mark class="ph">&lt;MGMT_ACL&gt;</mark> in vrf-also</pre></section><section><h4>Before you apply</h4><ul class="checks"><li>Your own source IP is in the ACL: <code>show users</code>.</li><li>All management sources are in the ACL: jump hosts, NMS, backup and automation servers.</li><li>Check whether management uses a VRF: <code>show vrf</code>. If it does, keep <code>vrf-also</code>.</li></ul></section></div>
+</section><section class="finding">
+<h3><span class="num">10.</span><span class="sev sev-medium">Medium</span><span>An NTP server or peer must be configured</span><span class="id">IOS-NTP-001</span></h3>
+<dl class="facts"><dt>Area</dt><dd>Time / NTP (NTP)</dd>
+<dt>Location</dt><dd class="mono">(global)</dd>
+<dt>Config line</dt><dd class="mono">not in config: ntp server</dd>
+<dt>Why it matters</dt><dd>Without NTP the clock drifts and log times can&#x27;t be matched against other devices or an incident timeline.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>ntp server <mark class="ph">&lt;NTP_SERVER_IP_1&gt;</mark>
+ntp server <mark class="ph">&lt;NTP_SERVER_IP_2&gt;</mark>
+ntp server <mark class="ph">&lt;NTP_SERVER_IP_3&gt;</mark>
+ntp source <mark class="ph">&lt;MGMT_INTERFACE&gt;</mark></pre><p class="fix-note">Use one server or at least three, never two. Management in a VRF: <code>ntp server vrf <mark class="ph">&lt;MGMT_VRF&gt;</mark> <mark class="ph">&lt;NTP_SERVER_IP&gt;</mark></code>.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>The servers are reachable over UDP 123 from the source interface.</li></ul></section></div>
+</section><section class="finding">
+<h3><span class="num">11.</span><span class="sev sev-medium">Medium</span><span>Every SNMP community must be limited by an ACL</span><span class="id">IOS-SNMP-003</span></h3>
+<dl class="facts"><dt>Area</dt><dd>SNMP (SNMP)</dd>
+<dt>Location</dt><dd class="mono">(global)</dd>
+<dt>Config line</dt><dd class="mono">snmp-server community &lt;redacted&gt; RO</dd>
+<dt>Why it matters</dt><dd>Without an ACL, any host can query SNMP once it knows or guesses the community string.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>ip access-list standard <mark class="ph">&lt;SNMP_ACL&gt;</mark>
+ permit <mark class="ph">&lt;MONITORING_SERVER_IP&gt;</mark>
+ deny any log
+snmp-server community <mark class="ph">&lt;COMMUNITY&gt;</mark> RO <mark class="ph">&lt;SNMP_ACL&gt;</mark></pre><p class="fix-note"><mark class="ph">&lt;COMMUNITY&gt;</mark> is the existing community, hidden in this report. Keep <code>view <mark class="ph">&lt;VIEW&gt;</mark></code> if the original line has one.</p></section><section><h4>Before you apply</h4><ul class="checks"><li>The ACL lists every poller: primary, backup and collectors.</li></ul></section></div>
+</section><section class="finding">
+<h3><span class="num">12.</span><span class="sev sev-low">Low</span><span>Log messages must carry date and time stamps</span><span class="id">IOS-LOG-001</span></h3>
+<dl class="facts"><dt>Area</dt><dd>Logging (LOG)</dd>
+<dt>Location</dt><dd class="mono">(global)</dd>
+<dt>Config line</dt><dd class="mono">service timestamps log uptime</dd>
+<dt>Why it matters</dt><dd>Uptime stamps can&#x27;t be matched against other devices or an incident timeline.</dd></dl>
+<div class="fix"><section><h4>Recommended change</h4><pre>service timestamps log datetime msec localtime show-timezone
+service timestamps debug datetime msec localtime show-timezone</pre></section></div>
+</section>
+<h2>3. Other rules</h2>
+<details class="appendix"><summary>Not applicable (2)</summary><ul class="na"><li><code>IOS-MGMT-003</code> ACL used by a VTY access-class must be defined<br><span class="why">No VTY line uses an access-class, so there is no ACL to check.</span></li><li><code>IOS-SNMP-004</code> SNMPv3 groups must use authentication and encryption (priv)<br><span class="why">No SNMPv3 groups are configured.</span></li></ul></details>
+<details class="appendix"><summary>Passed (7)</summary><ul class="passed"><li><code>IOS-PASS-003</code> Console, AUX and VTY lines must not use a line password</li><li><code>IOS-SNMP-001</code> SNMP must not use the default communities public or private</li><li><code>IOS-MGMT-004</code> Console and VTY sessions must not have timeouts disabled</li><li><code>IOS-SVC-001</code> TCP and UDP small servers must be disabled</li><li><code>IOS-SVC-007</code> IP source routing must be disabled</li><li><code>IOS-IF-001</code> Packets with IP options must be dropped</li><li><code>IOS-MGMT-005</code> Console and VTY session timeouts must be 10 minutes or less</li></ul></details>
+<h2>4. Context</h2>
+<details class="appendix why-sec"><summary>Why it matters: actively exploited Cisco IOS vulnerabilities</summary>
+<p class="why-cap">18 of 40 actively exploited Cisco IOS / IOS XE vulnerabilities target services
+that hardening disables or restricts. Hardening reduces exposure; it does not replace patching.</p>
+<svg viewBox="0 0 520 168" width="100%" role="img" class="chart" aria-label="Actively exploited Cisco IOS and IOS XE vulnerabilities by service"><text x="0" y="11" font-size="11.5" fill="#e8e6e1">SNMP</text><rect x="170.0" y="0" width="247.7" height="14" rx="3" fill="#2f6fd6"><title>SNMP: 10 CVEs, service that hardening disables or restricts</title></rect><text x="423.7" y="11" font-size="11.5" fill="#e8e6e1">10</text><text x="0" y="33" font-size="11.5" fill="#a3a09a">IKE / VPN</text><rect x="170.0" y="22" width="123.8" height="14" rx="3" fill="#5c6068"><title>IKE / VPN: 5 CVEs, patch only</title></rect><text x="299.8" y="33" font-size="11.5" fill="#a3a09a">5</text><text x="0" y="55" font-size="11.5" fill="#a3a09a">DHCP</text><rect x="170.0" y="44" width="99.1" height="14" rx="3" fill="#5c6068"><title>DHCP: 4 CVEs, patch only</title></rect><text x="275.1" y="55" font-size="11.5" fill="#a3a09a">4</text><text x="0" y="77" font-size="11.5" fill="#e8e6e1">Web UI / HTTP server</text><rect x="170.0" y="66" width="74.3" height="14" rx="3" fill="#2f6fd6"><title>Web UI / HTTP server: 3 CVEs, service that hardening disables or restricts</title></rect><text x="250.3" y="77" font-size="11.5" fill="#e8e6e1">3</text><text x="0" y="99" font-size="11.5" fill="#e8e6e1">Smart Install</text><rect x="170.0" y="88" width="49.5" height="14" rx="3" fill="#2f6fd6"><title>Smart Install: 2 CVEs, service that hardening disables or restricts</title></rect><text x="225.5" y="99" font-size="11.5" fill="#e8e6e1">2</text><text x="0" y="121" font-size="11.5" fill="#e8e6e1">LLDP</text><rect x="170.0" y="110" width="49.5" height="14" rx="3" fill="#2f6fd6"><title>LLDP: 2 CVEs, service that hardening disables or restricts</title></rect><text x="225.5" y="121" font-size="11.5" fill="#e8e6e1">2</text><text x="0" y="143" font-size="11.5" fill="#e8e6e1">CMP over Telnet</text><rect x="170.0" y="132" width="24.8" height="14" rx="3" fill="#2f6fd6"><title>CMP over Telnet: 1 CVE, service that hardening disables or restricts</title></rect><text x="200.8" y="143" font-size="11.5" fill="#e8e6e1">1</text><text x="0" y="165" font-size="11.5" fill="#a3a09a">Other (QoS, NAT, UDP, …)</text><rect x="170.0" y="154" width="322.0" height="14" rx="3" fill="#5c6068"><title>Other (QoS, NAT, UDP, …): 13 CVEs, patch only</title></rect><text x="498.0" y="165" font-size="11.5" fill="#a3a09a">13</text></svg><ul class="legend"><li><span class="sw" style="background:#2f6fd6"></span>Service that hardening disables or restricts</li><li><span class="sw" style="background:#5c6068"></span>Fixed by patching only</li></ul>
+<div class="stats"><div class="stat"><b>22 074</b><span>Cisco IOS XE devices implanted through the web UI (CVE-2023-20198), Oct 2023</span><small>Palo Alto Unit 42, 2023</small></div><div class="stat"><b>168 000+</b><span>devices with Smart Install exposed to the internet</span><small>Cisco Talos, 2018</small></div><div class="stat"><b>22 %</b><span>of vulnerability exploitation targeted edge devices and VPNs, up from 3 %</span><small>Verizon DBIR 2025</small></div></div>
+<ul class="sources"><li><a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog">CISA KEV catalog 2026.10.04</a>; service grouping by the Guardian project from CVE descriptions</li><li><a href="https://unit42.paloaltonetworks.com/threat-brief-cve-2023-20198-cisco-ios-xe/">Palo Alto Unit 42, 2023</a></li><li><a href="https://blog.talosintelligence.com/critical-infrastructure-at-risk/">Cisco Talos, 2018</a></li><li><a href="https://www.verizon.com/business/resources/reports/dbir/">Verizon DBIR 2025</a></li></ul>
+</details>
+<footer>Generated by Guardian 0.1 from sw-acc-01_running-config.txt (SHA-256 aa066817ee8c6175…). This report reflects the saved configuration only, not the running state of the device.</footer>
+</main>
+</body>
+</html>

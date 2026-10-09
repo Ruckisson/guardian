@@ -13,10 +13,31 @@ rationale: >
   only and is monitored. In many countries that notice matters if
   unauthorized access is ever taken to court.
 
-remediation: |
-  banner login ^C
-  Authorized access only. All activity is logged.
-  ^C
+remediation:
+  recommended_change:
+    - "banner login #"
+    - "<LEGAL_TEXT>"
+    - "#"
+  before_you_apply:
+    - >-
+      Use the text your organization requires, for example: Authorized access
+      only. All activity is monitored and logged.
+    - >-
+      The text must not contain `#` and must not reveal the hostname, versions,
+      the company or contacts.
+  notes:
+    - "`^C` in `show running-config` stands for Ctrl+C; do not paste it literally."
+
+references:
+  stig:
+    - id: V-215814
+      stig_id: CISC-ND-000160
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AC-8]
+  cisco_guide: "Warning Banners"
+  cisa: false
 
 examples:
   compliant:

@@ -13,8 +13,17 @@ rationale: >
   has it on by default and does not show the default in the running config,
   so the rule looks for the explicit "no ip source-route".
 
-remediation: |
-  no ip source-route
+remediation:
+  recommended_change:
+    - "no ip source-route"
+  before_you_apply:
+    - "No application relies on IP source routing (practically none do)."
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "Disable IP Source Routing"
+  cisa: false
 
 examples:
   compliant:

@@ -4,6 +4,11 @@ severity: medium
 
 scope:
   path: "^line vty "
+  skip_if:
+    # A VTY line with "transport input none" accepts no connections.
+    - block: "^line vty "
+      child: "^transport input none$"
+      reason: the line accepts no connections (transport input none)
 
 check:
   # Applies only when an interface has an IPv6 address ("ipv6 address" or
@@ -15,25 +20,45 @@ rationale: >
   address, the VTY lines are reachable over IPv6 from anywhere, and the
   IPv4 ACL from IOS-MGMT-002 does not help.
 
-remediation: |
-  ipv6 access-list MGMT-ACCESS-V6
-   permit ipv6 2001:db8:99::/64 any
-  line vty 0 15
-   ipv6 access-class MGMT-ACCESS-V6 in
+remediation:
+  recommended_change:
+    - "ipv6 access-list <MGMT_ACL_V6>"
+    - " permit ipv6 <MGMT_PREFIX_V6> any"
+    - " deny ipv6 any any log"
+    - "{block}"
+    - " ipv6 access-class <MGMT_ACL_V6> in"
+  before_you_apply:
+    - "Your own IPv6 source and all IPv6 management sources are permitted: `show users`."
+    - "Run `reload in 10` before the change and `reload cancel` after a new login works."
+  may_cut_access: true
+
+applies_to: VTY lines
+
+references:
+  stig:
+    - id: V-215812
+      stig_id: CISC-ND-000140
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AC-4]
+  cisco_guide: "Control vty and tty Lines"
+  cisa: false
 
 examples:
   compliant:
-    - |
-      interface Vlan99
-       ip address 172.16.1.2 255.255.255.0
-      line vty 0 4
-       access-class MGMT-ACCESS in
     - |
       interface Vlan99
        ipv6 address 2001:db8:99::2/64
       line vty 0 4
        access-class MGMT-ACCESS in
        ipv6 access-class MGMT-ACCESS-V6 in
+  not_applicable:
+    - |
+      interface Vlan99
+       ip address 172.16.1.2 255.255.255.0
+      line vty 0 4
+       access-class MGMT-ACCESS in
   non_compliant:
     - |
       interface Vlan99
