@@ -1,9 +1,14 @@
 id: IOS-MGMT-004
 title: Console and VTY sessions must not have timeouts disabled
-severity: medium
+severity: high
 
 scope:
   path: "^line (con|vty) "
+  skip_if:
+    # A VTY line with "transport input none" accepts no connections.
+    - block: "^line vty "
+      child: "^transport input none$"
+      reason: the line accepts no connections (transport input none)
 
 check:
   # "exec-timeout 0 0" (or "0") means the session never times out.
@@ -14,11 +19,27 @@ rationale: >
   walks away or loses the connection, and anyone who reaches that terminal
   inherits the privileges.
 
-remediation: |
-  line con 0
-   exec-timeout 5 0
-  line vty 0 15
-   exec-timeout 5 0
+remediation:
+  recommended_change:
+    - "{block}"
+    - " exec-timeout 5 0"
+  before_you_apply:
+    - >-
+      Nobody relies on a session that never times out, for example a console
+      that shows debug output for hours.
+
+applies_to: console or VTY lines
+
+references:
+  stig:
+    - id: V-215833
+      stig_id: CISC-ND-000720
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: related
+  nist_800_53: [SC-10]
+  cisco_guide: "EXEC Timeout"
+  cisa: false
 
 examples:
   compliant:

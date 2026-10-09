@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "guardian"
-version = "0.0.1"
+version = "0.1.0"
 description = "Network configuration backup, compliance auditing and drift tracking."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -37,7 +37,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 # Bundled rule sets ship inside the package, so "guardian audit" works from any folder.
-guardian = ["rulesets/*/*.yaml"]
+guardian = ["rulesets/*/*.yaml", "core/reporting/*.css", "core/reporting/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

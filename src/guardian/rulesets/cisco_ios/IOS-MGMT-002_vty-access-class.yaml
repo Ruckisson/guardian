@@ -4,6 +4,11 @@ severity: medium
 
 scope:
   path: "^line vty "
+  skip_if:
+    # A VTY line with "transport input none" accepts no connections.
+    - block: "^line vty "
+      child: "^transport input none$"
+      reason: the line accepts no connections (transport input none)
 
 check:
   # Inbound only; "out" limits onward sessions from the switch, not logins to it.
@@ -15,12 +20,34 @@ rationale: >
   Limiting VTY access to the management network reduces the exposure
   even when SSH and strong credentials are in place.
 
-remediation: |
-  ip access-list standard MGMT-ACCESS
-   permit <management-network> <wildcard>
-   deny   any log
-  line vty 0 15
-   access-class MGMT-ACCESS in
+remediation:
+  recommended_change:
+    - "ip access-list standard <MGMT_ACL>"
+    - " permit <MGMT_NETWORK> <WILDCARD>"
+    - " deny any log"
+    - "{block}"
+    - " access-class <MGMT_ACL> in vrf-also"
+  before_you_apply:
+    - "Your own source address is permitted: `show users`."
+    - "All management sources are permitted: jump hosts, NMS, backup and automation servers."
+    - >-
+      Without `vrf-also` all sessions arriving through a VRF are refused,
+      management VRFs included (`show vrf`).
+    - "Run `reload in 10` before the change and `reload cancel` after a new login works."
+  may_cut_access: true
+
+applies_to: VTY lines
+
+references:
+  stig:
+    - id: V-215812
+      stig_id: CISC-ND-000140
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: [AC-4]
+  cisco_guide: "Control vty and tty Lines"
+  cisa: false
 
 examples:
   compliant:
@@ -33,6 +60,7 @@ examples:
     - |
       line vty 0 4
        access-class MGMT-ACCESS in vrf-also
+  not_applicable:
     - |
       line con 0
        logging synchronous

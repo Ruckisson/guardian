@@ -16,9 +16,18 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from guardian.core.models import Severity
+from guardian.core.models import References, Severity
 
 Pattern = re.Pattern[str]
+
+
+@dataclass(frozen=True)
+class Skip:
+    """A selected block is N/A when its header matches ``block`` and a child ``child``."""
+
+    child: Pattern
+    reason: str
+    block: Pattern | None = None
 
 
 @dataclass(frozen=True)
@@ -29,12 +38,14 @@ class Scope:
     Otherwise each regex in ``path`` selects lines one nesting level deeper:
     ``("^router bgp ", "^address-family ")`` selects address families inside
     BGP. ``has_child`` / ``not_has_child`` then keep only blocks that do /
-    do not contain a matching child line.
+    do not contain a matching child line. ``skip_if`` marks selected blocks
+    as N/A with a reason, e.g. VTY lines that accept no connections.
     """
 
     path: tuple[Pattern, ...] = ()
     has_child: tuple[Pattern, ...] = ()
     not_has_child: tuple[Pattern, ...] = ()
+    skip_if: tuple[Skip, ...] = ()
 
     @property
     def is_global(self) -> bool:
@@ -103,8 +114,49 @@ Check = MustExist | MustNotExist | EachMustMatch | Value | Reference | Python
 class Examples:
     """Config snippets used by the test suite; the engine ignores them."""
 
-    compliant: tuple[str, ...] = ()
-    non_compliant: tuple[str, ...] = ()
+    compliant: tuple[str, ...] = ()  # must PASS
+    non_compliant: tuple[str, ...] = ()  # must FAIL
+    not_applicable: tuple[str, ...] = ()  # must be N/A
+
+
+@dataclass(frozen=True)
+class Variant:
+    """One version of the recommended change, used when its conditions hold.
+
+    ``when_config`` must match a top-level line, ``when_block`` a line inside
+    the failing block, ``when_line`` the offending config line. A variant
+    without conditions is the default and comes last. Its ``notes`` are shown
+    before the rule's notes.
+    """
+
+    commands: tuple[str, ...]
+    notes: tuple[str, ...] = ()
+    when_config: Pattern | None = None
+    when_block: Pattern | None = None
+    when_line: Pattern | None = None
+
+
+@dataclass(frozen=True)
+class AlternativeSpec:
+    text: str
+    commands: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class RemediationSpec:
+    """The remediation of a rule as written in YAML.
+
+    Commands and texts may contain ``{variables}`` filled from the config
+    (see ``guardian.core.rules.remediation``) and ``<PLACEHOLDERS>`` that a
+    person fills in.
+    """
+
+    recommended_change: tuple[Variant, ...]
+    before_you_apply: tuple[str, ...]
+    notes: tuple[str, ...] = ()
+    if_service_needed: AlternativeSpec | None = None
+    may_cut_access: bool = False
+    change_both_ends: bool = False
 
 
 @dataclass(frozen=True)
@@ -115,8 +167,9 @@ class Rule:
     scope: Scope
     check: Check
     rationale: str
-    remediation: str
-    references: tuple[str, ...] = ()
+    remediation: RemediationSpec
+    references: References = field(default_factory=References)
+    applies_to: str = ""  # what the scope selects, e.g. "VTY lines"; for N/A reasons
     examples: Examples = field(default_factory=Examples)
     source: Path | None = None
 

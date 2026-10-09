@@ -3,7 +3,8 @@ title: AUX and TTY lines must not accept incoming connections
 severity: low
 
 scope:
-  path: "^line (aux|tty) "
+  # "line 2", "line 33 48" and "line 0/0/0 0/0/15" are async lines too.
+  path: "^line (aux |tty |\\d)"
 
 check:
   must_exist: "^transport input none$"
@@ -13,11 +14,38 @@ rationale: >
   pass them to whatever is connected to the line. They are not meant for
   management access.
 
-remediation: |
-  line aux 0
-   transport input none
-  line tty 1 16
-   transport input none
+remediation:
+  recommended_change:
+    - "{block}"
+    - " transport input none"
+  before_you_apply:
+    - >-
+      The device is not a console server: `show line` shows no async lines in
+      use, and the config has no `ip host` entries with ports 2000 and up
+      (reverse telnet).
+  if_service_needed:
+    text: >-
+      On a console server keep the lines reachable, but only over SSH, from
+      management addresses and with login.
+    commands:
+      - "{block}"
+      - " transport input ssh"
+      - " access-class <MGMT_ACL> in"
+      - " login local"
+  may_cut_access: true
+
+applies_to: AUX, TTY or async lines
+
+references:
+  stig:
+    - id: V-216661
+      stig_id: CISC-RT-000230
+      benchmark: Cisco IOS XE Router RTR V3R5
+      severity: CAT III
+      relation: related
+  nist_800_53: [AC-4]
+  cisco_guide: "Control Transport for vty and tty Lines"
+  cisa: false
 
 examples:
   compliant:
@@ -28,10 +56,20 @@ examples:
     - |
       line tty 1 16
        transport input none
+    - |
+      line 33 48
+       transport input none
   non_compliant:
     - |
       line aux 0
        no exec
     - |
       line tty 1 16
+       transport input telnet
+    - |
+      line 2
+       no exec
+       transport output none
+    - |
+      line 0/0/0 0/0/15
        transport input telnet

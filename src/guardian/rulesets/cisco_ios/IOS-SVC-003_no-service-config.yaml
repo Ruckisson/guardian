@@ -1,6 +1,6 @@
 id: IOS-SVC-003
 title: Loading configuration from the network at boot must be disabled
-severity: medium
+severity: high
 
 scope: global
 
@@ -12,9 +12,32 @@ rationale: >
   TFTP when it boots. Anyone who answers on the network can feed it a config
   of their choice.
 
-remediation: |
-  no service config
-  no boot network <url>
+remediation:
+  recommended_change:
+    - when_line: "^service config$"
+      commands:
+        - "no service config"
+    - commands:
+        - "no boot network <BOOT_URL>"
+  before_you_apply:
+    - >-
+      The device does not load its configuration from the network on purpose
+      (autoinstall, provisioning).
+  notes:
+    - >-
+      <BOOT_URL> is the URL from the config (hidden in this report: it may
+      contain a user name and password).
+
+references:
+  stig:
+    - id: V-215823
+      stig_id: CISC-ND-000470
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: satisfies
+  nist_800_53: [CM-7]
+  cisco_guide: "Disable Unused Services"
+  cisa: false
 
 examples:
   compliant:

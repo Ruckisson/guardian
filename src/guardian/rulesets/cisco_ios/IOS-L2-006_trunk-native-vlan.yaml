@@ -15,9 +15,44 @@ rationale: >
   default, shared with user ports) an attacker can send double tagged frames
   into another VLAN. Use an unused VLAN as native VLAN on every trunk.
 
-remediation: |
-  interface <trunk-port>
-   switchport trunk native vlan 998
+remediation:
+  recommended_change:
+    - "vlan <NATIVE_VLAN>"
+    - " name NATIVE-UNUSED"
+    - "{block}"
+    - " switchport trunk native vlan <NATIVE_VLAN>"
+  before_you_apply:
+    - >-
+      Find the neighbour: `show cdp neighbors {interface} detail`, and set the
+      same native VLAN there at the same time.
+    - "<NATIVE_VLAN> is an unused VLAN, the same across the network, and on no access port."
+    - "Nothing relies on untagged traffic on this trunk (APs, hypervisors, phones)."
+    - "VLANs are created on the VTP server (`show vtp status`)."
+  notes:
+    - >-
+      A new native VLAN alone does not stop double tagging while an access port
+      sits in it. The strongest protection is `vlan dot1q tag native` (global),
+      if every neighbour supports it.
+  if_service_needed:
+    text: >-
+      If both ends cannot be changed now, tag the native VLAN too; the neighbour
+      has to support and use it as well.
+    commands:
+      - "vlan dot1q tag native"
+  change_both_ends: true
+
+applies_to: trunk ports (switchport mode trunk)
+
+references:
+  stig:
+    - id: V-220672
+      stig_id: CISC-L2-000260
+      benchmark: Cisco IOS XE Switch L2S V3R2
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: [CM-6]
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:

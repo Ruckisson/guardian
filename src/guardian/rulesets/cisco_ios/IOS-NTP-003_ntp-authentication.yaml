@@ -6,7 +6,7 @@ scope: global
 
 check:
   # Every "ntp server/peer" needs "key <n>" where n is defined and trusted.
-  # Passes when no NTP server is configured (IOS-NTP-001 reports that).
+  # N/A when no NTP server is configured (IOS-NTP-001 reports that).
   python: ntp-authentication
 
 rationale: >
@@ -14,11 +14,38 @@ rationale: >
   its time server. A wrong clock breaks log correlation, certificates and
   time based ACLs, and can hide when an attack happened.
 
-remediation: |
-  ntp authentication-key 1 hmac-sha2-256 <key>
-  ntp trusted-key 1
-  ntp authenticate
-  ntp server <ntp-ip> key 1
+remediation:
+  recommended_change:
+    - "ntp authentication-key 1 hmac-sha2-256 <NTP_KEY>"
+    - "ntp trusted-key 1"
+    - "ntp {ntp_source} key 1"
+    - "ntp authenticate"
+  before_you_apply:
+    - >-
+      The NTP server supports symmetric keys and has the same key ID and value.
+      Public servers such as pool.ntp.org do not.
+    - >-
+      Check supported algorithms: `ntp authentication-key 1 ?`. Use `md5` if
+      `hmac-sha2-256` is not offered.
+    - >-
+      Enter `ntp authenticate` last, after `show ntp associations detail` shows
+      the servers as authenticated; otherwise the clock stops syncing.
+  notes:
+    - >-
+      Re-entering the line replaces its options; keep prefer, source and version
+      as shown.
+    - "<NTP_KEY> is a new random key, never taken from the config."
+
+references:
+  stig:
+    - id: V-215843
+      stig_id: CISC-ND-001150
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [IA-3]
+  cisco_guide: "Network Time Protocol"
+  cisa: false
 
 examples:
   compliant:
@@ -33,14 +60,15 @@ examples:
       ntp trusted-key 1
       ntp server vrf MGMT 172.16.1.1 key 1 prefer
     - |
-      hostname R1
-    - |
       ntp authentication-key 2 md5 104D000A0618 7
       ntp authentication-key 3 md5 104D000A0618 7
       ntp authenticate
       ntp trusted-key 1 - 3
       ntp server 172.16.1.1 key 2
       ntp peer 172.16.1.2 key 3
+  not_applicable:
+    - |
+      hostname R1
   non_compliant:
     - |
       ntp server 172.16.1.1

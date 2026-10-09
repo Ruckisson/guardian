@@ -4,6 +4,11 @@ severity: medium
 
 scope:
   path: "^line vty "
+  skip_if:
+    # A VTY line with "transport input none" accepts no connections.
+    - block: "^line vty "
+      child: "^transport input none$"
+      reason: the line accepts no connections (transport input none)
 
 check:
   reference:
@@ -17,11 +22,46 @@ rationale: >
   access list generally permits all traffic. This rule complements
   IOS-MGMT-002, which only checks that an access-class is present.
 
-remediation: |
-  Define the ACL that the access-class refers to, or correct its name:
-  ip access-list standard MGMT-ACCESS
-   permit <management-network> <wildcard>
-   deny   any log
+remediation:
+  recommended_change:
+    # A numbered ACL in the classic form (extended 100-199 and 2000-2699,
+    # standard 1-99 and 1300-1999); a named one as a standard ACL.
+    - when_block: "^access-class (1\\d\\d|2[0-6]\\d\\d) in"
+      commands:
+        - "access-list {acl_name} permit tcp <MGMT_NETWORK> <WILDCARD> any eq 22"
+        - "access-list {acl_name} deny ip any any log"
+    - when_block: "^access-class ([1-9]\\d?|1[3-9]\\d\\d) in"
+      commands:
+        - "access-list {acl_name} permit <MGMT_NETWORK> <WILDCARD>"
+        - "access-list {acl_name} deny any log"
+    - commands:
+        - "ip access-list standard {acl_name}"
+        - " permit <MGMT_NETWORK> <WILDCARD>"
+        - " deny any log"
+  before_you_apply:
+    - >-
+      An undefined ACL permits everything today. As soon as it exists it
+      filters, so this change can lock you out.
+    - >-
+      Check the name first: a typo in `access-class` is the usual cause; then
+      correct the line instead of creating a new ACL.
+    - "Your own source address is permitted: `show users`."
+    - "All management sources are permitted: jump hosts, NMS, backup and automation servers."
+    - "Run `reload in 10` before the change and `reload cancel` after a new login works."
+  may_cut_access: true
+
+applies_to: VTY lines
+
+references:
+  stig:
+    - id: V-215812
+      stig_id: CISC-ND-000140
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AC-4]
+  cisco_guide: "Control vty and tty Lines"
+  cisa: false
 
 examples:
   compliant:

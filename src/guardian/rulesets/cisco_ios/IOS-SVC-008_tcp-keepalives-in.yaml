@@ -11,9 +11,18 @@ rationale: >
   Without keepalives a VTY session whose client crashed or lost the network
   stays open and keeps its VTY line. Enough of them and nobody can log in.
 
-remediation: |
-  service tcp-keepalives-in
-  service tcp-keepalives-out
+remediation:
+  recommended_change:
+    - "service tcp-keepalives-in"
+    - "service tcp-keepalives-out"
+  before_you_apply:
+    - "Nothing to check; keepalives only close sessions whose other end is gone."
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "Keepalives for TCP Sessions"
+  cisa: false
 
 examples:
   compliant:

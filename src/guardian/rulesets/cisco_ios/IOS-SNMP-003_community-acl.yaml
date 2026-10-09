@@ -15,11 +15,25 @@ rationale: >
   limits SNMP to the monitoring systems, so a leaked or guessed community
   is much less useful.
 
-remediation: |
-  ip access-list standard SNMP-ACCESS
-   permit <monitoring-server>
-   deny   any log
-  snmp-server community <community> RO SNMP-ACCESS
+remediation:
+  recommended_change:
+    - "ip access-list standard <SNMP_ACL>"
+    - " permit <MONITORING_SERVER_IP>"
+    - " deny any log"
+    - "snmp-server community <COMMUNITY> RO <SNMP_ACL>"
+  before_you_apply:
+    - "The ACL lists every poller (primary, backup, collectors), otherwise graphs get gaps."
+  notes:
+    - >-
+      <COMMUNITY> is the existing community (hidden in this report). Keep `view
+      <VIEW>` if the original line has one; the new line replaces it.
+    - "Long term, prefer SNMPv3 (IOS-SNMP-004)."
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "SNMP Community Strings with ACLs"
+  cisa: false
 
 examples:
   compliant:

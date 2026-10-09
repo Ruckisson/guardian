@@ -12,9 +12,21 @@ rationale: >
   extra code with network access that has to be patched and watched. Turn it
   off unless an application really needs it.
 
-remediation: |
-  guestshell disable
-  no iox
+remediation:
+  recommended_change:
+    - "no iox"
+  before_you_apply:
+    - >-
+      No applications run: `show app-hosting list`, `show iox-service`
+      (ThousandEyes, Cyber Vision, Guest Shell), and no EEM scripts use Guest
+      Shell.
+    - "If Guest Shell is enabled, stop it first in privileged EXEC mode: `guestshell disable`."
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "Disable Unused Services"
+  cisa: true
 
 examples:
   compliant:

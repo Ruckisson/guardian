@@ -11,7 +11,9 @@ Handled specially:
 * multi-line ``banner`` text is kept as children of the banner line, so the
   banner's content can never be mistaken for configuration;
 * tabs, Windows line endings and a byte-order mark are normalised (see
-  ``_indent``).
+  ``_indent``);
+* other control characters (terminal escapes such as ESC) become ``?``, so
+  a config cannot rewrite the terminal or a report that shows its lines.
 """
 
 import re
@@ -30,6 +32,9 @@ _SKIP = re.compile(
     r")$"
 )
 
+# Control characters other than tab; line breaks are already split off.
+_CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
 # "banner motd ^C" with the text starting on the same line or on the next ones.
 # Running-config prints the delimiter as the two characters "^C"; a banner typed
 # with another delimiter (e.g. "#") keeps that single character.
@@ -43,7 +48,7 @@ def parse(text: str) -> list[ConfigLine]:
     """
     root: list[ConfigLine] = []
     stack: list[tuple[int, ConfigLine]] = []  # (indent, line) of open parents
-    lines = text.lstrip("\ufeff").splitlines()
+    lines = [_CONTROL.sub("?", line) for line in text.lstrip("\ufeff").splitlines()]
 
     i = 0
     while i < len(lines):

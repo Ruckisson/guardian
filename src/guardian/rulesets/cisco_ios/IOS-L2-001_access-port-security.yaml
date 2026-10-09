@@ -20,16 +20,47 @@ rationale: >
   at all. Trunks, shut-down ports and ports
   without an explicit access mode are out of scope for this rule.
 
-remediation: |
-  interface <access-port>
-   switchport port-security maximum 2
-   switchport port-security violation restrict
-   switchport port-security
-  Or 802.1X/MAB:
-  interface <access-port>
-   authentication port-control auto
-   mab
-   dot1x pae authenticator
+remediation:
+  recommended_change:
+    - "{block}"
+    - " switchport mode access"
+    - " switchport port-security maximum <MAX_MAC>"
+    - " switchport port-security violation restrict"
+    - " switchport port-security aging time 10"
+    - " switchport port-security aging type inactivity"
+    - " switchport port-security"
+  before_you_apply:
+    - >-
+      Count the MAC addresses on the port: `show mac address-table interface
+      {interface}`. <MAX_MAC> is 1 for a single PC, 3 for an IP phone with a PC
+      behind it, more for hypervisors.
+    - >-
+      Check what is connected: `show cdp neighbors {interface} detail` or `show
+      lldp neighbors {interface} detail` (phones, APs, small switches).
+  notes:
+    - >-
+      802.1X/MAB is the stronger option: port security can be bypassed by
+      spoofing a known MAC address.
+    - >-
+      `violation restrict` drops and logs frames from extra MACs; `violation
+      shutdown` is stricter but disables the port.
+  if_service_needed:
+    text: >-
+      If the network has RADIUS, use 802.1X/MAB with `authentication
+      port-control auto` instead of port security.
+
+applies_to: active access ports (switchport mode access, not shut down)
+
+references:
+  stig:
+    - id: V-220649
+      stig_id: CISC-L2-000020
+      benchmark: Cisco IOS XE Switch L2S V3R2
+      severity: CAT I
+      relation: related
+  nist_800_53: [IA-3]
+  cisco_guide: "Port Security"
+  cisa: false
 
 examples:
   compliant:
@@ -38,17 +69,6 @@ examples:
        switchport mode access
        switchport port-security maximum 2
        switchport port-security
-    - |
-      interface Ethernet0/2
-       switchport mode access
-       shutdown
-    - |
-      interface Ethernet0/0
-       switchport trunk encapsulation dot1q
-       switchport mode trunk
-    - |
-      interface Vlan99
-       ip address 172.16.1.2 255.255.255.0
     - |
       interface GigabitEthernet1/0/5
        switchport mode access
@@ -60,6 +80,18 @@ examples:
        switchport mode access
        access-session port-control auto
        dot1x pae authenticator
+  not_applicable:
+    - |
+      interface Ethernet0/2
+       switchport mode access
+       shutdown
+    - |
+      interface Ethernet0/0
+       switchport trunk encapsulation dot1q
+       switchport mode trunk
+    - |
+      interface Vlan99
+       ip address 172.16.1.2 255.255.255.0
   non_compliant:
     - |
       interface Ethernet0/1

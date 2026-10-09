@@ -1,6 +1,6 @@
 id: IOS-SNMP-001
 title: SNMP must not use the default communities public or private
-severity: high
+severity: critical
 
 scope: global
 
@@ -12,11 +12,34 @@ rationale: >
   tries. With them anyone who can reach the device over SNMP can read its
   configuration details, and with write access change them.
 
-remediation: |
-  no snmp-server community public
-  no snmp-server community private
-  Prefer SNMPv3 with authentication and encryption, or use a long random
-  community limited by an ACL.
+remediation:
+  recommended_change:
+    - when_line: "^snmp-server community public( |$)"
+      commands:
+        - "no snmp-server community public"
+    - when_line: "^snmp-server community private( |$)"
+      commands:
+        - "no snmp-server community private"
+    - commands:
+        - "no snmp-server community <COMMUNITY>"
+  before_you_apply:
+    - >-
+      Find out which community the monitoring system uses and move it to a new
+      random community or to SNMPv3 first (IOS-SNMP-003, IOS-SNMP-004).
+    - "`show snmp` shows whether the device gets SNMP requests at all."
+  notes:
+    - >-
+      <COMMUNITY> is the existing community in the spelling of the config
+      (hidden in this report).
+    - >-
+      Change the credential to a new value, do not reuse the old one: it was
+      readable in the config.
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "SNMP Community Strings"
+  cisa: false
 
 examples:
   compliant:

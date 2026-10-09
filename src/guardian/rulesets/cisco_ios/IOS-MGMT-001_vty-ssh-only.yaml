@@ -1,6 +1,6 @@
 id: IOS-MGMT-001
 title: VTY lines must accept SSH only
-severity: high
+severity: critical
 
 scope:
   path: "^line vty "
@@ -14,9 +14,48 @@ rationale: >
   A missing "transport input" line is a finding as well, because the
   default depends on the IOS version and may permit telnet.
 
-remediation: |
-  line vty 0 15
-   transport input ssh
+remediation:
+  recommended_change:
+    - "ip domain name <DOMAIN>"
+    - "crypto key generate rsa modulus 2048"
+    - "ip ssh version 2"
+    - "{block}"
+    - " transport input ssh"
+    - " transport output none"
+  before_you_apply:
+    - >-
+      SSH already works: `show ip ssh` shows "SSH Enabled - version 2.0" and you
+      can log in over SSH now.
+    - >-
+      An RSA key of 2048 bits or more exists: `show crypto key mypubkey rsa`. If
+      so, skip the first two lines.
+    - >-
+      No tool still uses telnet (NMS, backup scripts, terminal servers): `show
+      users`, `show tcp brief`.
+    - "Run `reload in 10` before the change and `reload cancel` after a new login works."
+  notes:
+    - >-
+      If an RSA key already exists, `crypto key generate rsa` asks "Do you
+      really want to replace them?"; replacing it changes the host key
+      fingerprint that SSH clients remember.
+    - "Fix every VTY block the same way (`line vty 0 4`, `5 15`, higher ranges on IOS-XE)."
+    - >-
+      `transport output none` stops onward sessions from the device; drop that
+      line if admins use it as a jump host.
+  may_cut_access: true
+
+applies_to: VTY lines
+
+references:
+  stig:
+    - id: V-215845
+      stig_id: CISC-ND-001210
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT I
+      relation: related
+  nist_800_53: [MA-4]
+  cisco_guide: "Control Transport for vty and tty Lines"
+  cisa: true
 
 examples:
   compliant:

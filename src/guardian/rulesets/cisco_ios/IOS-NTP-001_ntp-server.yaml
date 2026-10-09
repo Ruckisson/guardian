@@ -1,29 +1,71 @@
 id: IOS-NTP-001
-title: An NTP server or peer must be configured
+title: At least two NTP servers or peers must be configured
 severity: medium
 
 scope: global
 
 check:
-  must_exist: "^ntp (server|peer) "
+  # Two or more different "ntp server" / "ntp peer" addresses, with or
+  # without vrf (DISA STIG V-215838). The remediation recommends 3 to 4.
+  python: ntp-servers
 
 rationale: >
   Without NTP the clock drifts and log timestamps cannot be matched with
   other devices during an incident. Certificates and time based ACLs also
-  need the correct time. Two or more servers are better than one.
+  need the correct time. With one server a fault goes unnoticed. DISA STIG
+  asks for at least two; with only two, NTP still cannot tell which one is
+  wrong when they disagree, so three or four are better.
 
-remediation: |
-  ntp server <ntp-ip-1>
-  ntp server <ntp-ip-2>
+remediation:
+  recommended_change:
+    - "ntp server <NTP_SERVER_IP_1>"
+    - "ntp server <NTP_SERVER_IP_2>"
+    - "ntp server <NTP_SERVER_IP_3>"
+    - "ntp source <MGMT_INTERFACE>"
+  before_you_apply:
+    - "The servers are reachable over UDP 123 from the source interface."
+    - "Keep the servers that are already configured; add only the missing ones."
+  notes:
+    - >-
+      Use 3 to 4 independent servers: with two, NTP cannot tell which one is
+      wrong when they disagree.
+    - "Management in a VRF: `ntp server vrf <MGMT_VRF> <NTP_SERVER_IP>`."
+    - >-
+      Authenticate the servers too (IOS-NTP-003); unauthenticated time can be
+      shifted by anyone on the path.
+    - >-
+      Limit who the device takes time from and serves time to: `ntp
+      access-group peer <NTP_ACL>` (an ACL that permits the servers) and `ntp
+      access-group serve-only <NTP_CLIENTS_ACL>`.
+
+references:
+  stig:
+    - id: V-215838
+      stig_id: CISC-ND-001030
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: [AU-8]
+  cisco_guide: "Network Time Protocol"
+  cisa: false
 
 examples:
   compliant:
     - |
       ntp server 172.16.1.1
+      ntp server 172.16.1.2
+      ntp server 172.16.1.3
     - |
       ntp server vrf MGMT 172.16.1.1
-    - |
       ntp peer 10.0.0.2
+    - |
+      ntp server 172.16.1.1
+      ntp server 172.16.1.2
   non_compliant:
+    - |
+      ntp server 172.16.1.1
+    - |
+      ntp server 172.16.1.1
+      ntp server vrf MGMT 172.16.1.1
     - |
       clock timezone CET 1 0

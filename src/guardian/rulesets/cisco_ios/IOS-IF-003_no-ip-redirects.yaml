@@ -1,6 +1,6 @@
 id: IOS-IF-003
 title: ICMP redirects must be disabled on routed interfaces
-severity: low
+severity: medium
 
 scope:
   path: "^interface (?!Loopback|Null|Tunnel)"
@@ -15,9 +15,27 @@ rationale: >
   topology. Hosts should use their configured gateway, and generating
   redirects costs CPU.
 
-remediation: |
-  interface <interface>
-   no ip redirects
+remediation:
+  recommended_change:
+    - "{block}"
+    - " no ip redirects"
+  before_you_apply:
+    - >-
+      Hosts on this subnet use the right default gateway; after the change they
+      no longer learn a better one from redirects.
+
+applies_to: routed interfaces that are up (with an IP address, not shut down)
+
+references:
+  stig:
+    - id: V-216657
+      stig_id: CISC-RT-000190
+      benchmark: Cisco IOS XE Router RTR V3R5
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: [SC-5]
+  cisco_guide: "IP ICMP Redirects"
+  cisa: false
 
 examples:
   compliant:
@@ -25,6 +43,7 @@ examples:
       interface GigabitEthernet0/0
        ip address 10.0.0.1 255.255.255.0
        no ip redirects
+  not_applicable:
     - |
       interface Ethernet0/1
        switchport mode access

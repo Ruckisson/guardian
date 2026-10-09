@@ -12,8 +12,17 @@ rationale: >
   the device. Combined with a leaked or guessed RW community this is a
   remote off switch.
 
-remediation: |
-  no snmp-server system-shutdown
+remediation:
+  recommended_change:
+    - "no snmp-server system-shutdown"
+  before_you_apply:
+    - "No tool reloads the device over SNMP on purpose."
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:

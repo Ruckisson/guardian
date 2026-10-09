@@ -2,10 +2,11 @@
 
 import pytest
 
-from guardian.core.models import Severity
+from guardian.core.models import Severity, Status
 from guardian.core.parsers.cisco import parse
 from guardian.core.rules import custom
-from guardian.core.rules.engine import GLOBAL_TARGET, evaluate
+from guardian.core.rules.custom import NotApplicable
+from guardian.core.rules.engine import GLOBAL_TARGET, evaluate, evaluate_rule
 from guardian.core.rules.loader import parse_rule
 
 
@@ -17,7 +18,8 @@ def make_rule(scope, check, **extra):
         "scope": scope,
         "check": check,
         "rationale": "Because.",
-        "remediation": "Fix it.",
+        "remediation": {"recommended_change": ["fix it"], "before_you_apply": ["Check."]},
+        "references": {"stig": [], "nist_800_53": [], "cisco_guide": None, "cisa": False},
     }
     data.update(extra)
     return parse_rule(data)
@@ -270,7 +272,7 @@ def test_finding_fields_and_redacted_target() -> None:
 
     assert finding.rule_id == "TEST-RULE-001"
     assert finding.severity is Severity.HIGH
-    assert finding.message == "Test rule"
+    assert finding.title == "Test rule"
     assert "s3cret" not in finding.target
     assert finding.target == "snmp-server community <redacted> RO"
 
@@ -285,3 +287,63 @@ def test_value_that_is_not_a_number_is_a_finding() -> None:
     rule = make_rule("global", {"value": {"pattern": "^logging buffered (\\S+)", "max": 10}})
 
     assert targets(rule, "logging buffered informational\n") == [GLOBAL_TARGET]
+
+
+# ------------------------------------------------------------------ status
+
+
+def status(rule, text):
+    outcome = evaluate_rule(rule, parse(text))
+    return outcome.status, outcome.reason
+
+
+def test_status_pass_and_fail() -> None:
+    rule = make_rule({"path": "^line vty "}, {"must_exist": "^transport input ssh$"})
+
+    assert status(rule, "line vty 0 4\n transport input ssh\n") == (Status.PASS, "")
+    assert status(rule, "line vty 0 4\n")[0] is Status.FAIL
+
+
+def test_empty_scope_is_not_applicable_with_reason() -> None:
+    rule = make_rule({"path": "^line vty "}, {"must_exist": "^transport input ssh$"})
+
+    result, reason = status(rule, "hostname SW1\n")
+
+    assert result is Status.NOT_APPLICABLE
+    assert "^line vty " in reason
+
+
+def test_applies_to_gives_readable_reason() -> None:
+    rule = make_rule(
+        {"path": "^line vty "}, {"must_exist": "^transport input ssh$"}, applies_to="VTY lines"
+    )
+
+    assert status(rule, "hostname SW1\n") == (Status.NOT_APPLICABLE, "the config has no VTY lines")
+
+
+def test_custom_check_can_be_not_applicable(monkeypatch) -> None:
+    monkeypatch.setitem(
+        custom.CHECKS,
+        "only-with-http",
+        lambda block, config: (
+            any(line.text == "ip http server" for line in config) or NotApplicable("no HTTP")
+        ),
+    )
+    rule = make_rule("global", {"python": "only-with-http"})
+
+    assert status(rule, "hostname SW1\n") == (Status.NOT_APPLICABLE, "no HTTP")
+    assert status(rule, "ip http server\n") == (Status.PASS, "")
+    assert evaluate(rule, parse("hostname SW1\n")) == []
+
+
+def test_global_check_with_nothing_to_check_passes() -> None:
+    # each_must_match with no selected lines: nothing is wrong, the rule passes.
+    rule = make_rule(
+        "global", {"each_must_match": {"select": "^ntp server ", "pattern": " key \\d+$"}}
+    )
+
+    assert status(rule, "hostname SW1\n") == (Status.PASS, "")
+
+
+def test_status_values_are_stable() -> None:
+    assert [s.value for s in Status] == ["pass", "fail", "na"]

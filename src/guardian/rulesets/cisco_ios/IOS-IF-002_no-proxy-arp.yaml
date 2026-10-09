@@ -15,9 +15,31 @@ rationale: >
   networks. It hides bad host netmasks and lets a host on one segment reach
   places it should not, and a spoofed answer can redirect traffic.
 
-remediation: |
-  interface <interface>
-   no ip proxy-arp
+remediation:
+  recommended_change:
+    - "{block}"
+    - " no ip proxy-arp"
+  before_you_apply:
+    - >-
+      Hosts on this subnet have a correct mask and default gateway; proxy ARP
+      may be hiding wrong settings.
+    - >-
+      Neighbouring devices do not use static routes pointing out an interface
+      without a next hop toward this router.
+    - "Apply in a maintenance window and watch `show ip arp {interface}` afterwards."
+
+applies_to: routed interfaces that are up (with an IP address, not shut down)
+
+references:
+  stig:
+    - id: V-216676
+      stig_id: CISC-RT-000380
+      benchmark: Cisco IOS XE Router RTR V3R5
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: [SC-7]
+  cisco_guide: "Proxy ARP"
+  cisa: false
 
 examples:
   compliant:
@@ -25,6 +47,7 @@ examples:
       interface Vlan99
        ip address 172.16.1.2 255.255.255.0
        no ip proxy-arp
+  not_applicable:
     - |
       interface Loopback0
        ip address 10.255.0.1 255.255.255.255

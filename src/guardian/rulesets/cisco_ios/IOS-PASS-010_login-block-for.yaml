@@ -1,24 +1,77 @@
 id: IOS-PASS-010
-title: Login attempts must be rate limited with login block-for
+title: Login attempts must be rate limited with login block-for and a quiet-mode exception
 severity: medium
 
 scope: global
 
 check:
-  must_exist: "^login block-for \\d+ attempts \\d+ within \\d+"
+  # Needs "login block-for S attempts A within W" with S >= 900, A <= 3 and
+  # W >= 120 (DISA STIG V-215813), and "login quiet-mode access-class <ACL>";
+  # block-for alone lets anyone lock all administrators out.
+  python: login-block-for
 
 rationale: >
   After the given number of failed logins IOS refuses new logins for a while
   ("quiet period"). Password guessing over SSH or Telnet becomes very slow.
+  DISA STIG asks for at least 900 seconds after at most 3 failures within at
+  least 120 seconds.
+  Without a quiet-mode access-class the quiet period blocks everybody, so
+  anyone can lock all administrators out by failing logins on purpose; the
+  access-class keeps logins open for the management network.
 
-remediation: |
-  login block-for 120 attempts 3 within 60
-  login quiet-mode access-class MGMT-ACCESS
+remediation:
+  recommended_change:
+    - "login quiet-mode access-class {vty_acl}"
+    - "login block-for 900 attempts 3 within 120"
+  before_you_apply:
+    - >-
+      The quiet-mode ACL is taken from the VTY access-class when there is one.
+      If <MGMT_ACL> is shown instead, create it first: `ip access-list standard
+      <MGMT_ACL>` with ` permit <MGMT_NETWORK> <WILDCARD>`.
+    - >-
+      The ACL permits your own address and all management hosts (`show
+      users`); during the quiet period only they can log in.
+    - "No monitoring or automation tool logs in with wrong credentials in a loop."
+    - "Run `reload in 10` before the change and `reload cancel` after a new login works."
+  notes:
+    - >-
+      The values follow DISA STIG: after 3 failures within 120 seconds, logins
+      are blocked for 900 seconds (15 minutes) for everyone outside <MGMT_ACL>.
+    - "Set the quiet-mode access-class before block-for, so admins are never blocked."
+  may_cut_access: true
+
+references:
+  stig:
+    - id: V-215813
+      stig_id: CISC-ND-000150
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: [AC-7]
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:
     - |
-      login block-for 120 attempts 3 within 60
+      login block-for 900 attempts 3 within 120
+      login quiet-mode access-class MGMT-ACCESS
+    - |
+      login block-for 3600 attempts 2 within 300
+      login quiet-mode access-class 10
   non_compliant:
+    - |
+      login block-for 120 attempts 3 within 60
+      login quiet-mode access-class MGMT-ACCESS
+    - |
+      login block-for 900 attempts 4 within 120
+      login quiet-mode access-class MGMT-ACCESS
+    - |
+      login block-for 900 attempts 3 within 119
+      login quiet-mode access-class MGMT-ACCESS
+    - |
+      login block-for 900 attempts 3 within 120
+    - |
+      login quiet-mode access-class MGMT-ACCESS
     - |
       hostname SW1

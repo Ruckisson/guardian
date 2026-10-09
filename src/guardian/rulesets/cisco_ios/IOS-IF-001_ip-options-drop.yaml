@@ -5,8 +5,8 @@ severity: low
 scope: global
 
 check:
-  # Passes on multicast routers ("ip multicast-routing" or "ip pim" on an
-  # interface), where dropping options would break IGMP, PIM and RSVP.
+  # N/A on multicast routers ("ip multicast-routing", "ip pim") and where RSVP
+  # runs ("mpls traffic-eng tunnels", "ip rsvp"): dropping options breaks them.
   python: ip-options-drop
 
 rationale: >
@@ -14,15 +14,35 @@ rationale: >
   so a stream of them can overload the device. They are almost never needed
   (source routing, record route). Exception: "ip options drop" also drops
   packets with the Router Alert option that IGMP, PIM and RSVP rely on, so
-  the rule does not apply to devices that route multicast.
+  the rule does not apply to devices that route multicast or run RSVP
+  (MPLS traffic engineering).
 
-remediation: |
-  ip options drop
+remediation:
+  recommended_change:
+    - "ip options drop"
+  before_you_apply:
+    - "No multicast routing: `show ip mroute` is empty."
+    - >-
+      No RSVP or MPLS TE: `show ip rsvp interface`, `show mpls traffic-eng
+      tunnels`. Dropping options breaks them (Router Alert).
+  if_service_needed:
+    text: >-
+      Use `ip options ignore` (packets are forwarded as if they had no options),
+      or filter options on the internet edge ACL instead.
+    commands:
+      - "ip options ignore"
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "IP Options Selective Drop"
+  cisa: false
 
 examples:
   compliant:
     - |
       ip options drop
+  not_applicable:
     - |
       ip multicast-routing
     - |

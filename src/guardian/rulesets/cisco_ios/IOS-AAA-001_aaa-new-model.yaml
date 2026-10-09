@@ -11,10 +11,36 @@ rationale: >
   Without AAA the device knows only line passwords and local users with no
   method lists, no central TACACS+/RADIUS, no lockout and no accounting.
 
-remediation: |
-  aaa new-model
-  aaa authentication login default local
-  aaa authorization exec default local
+remediation:
+  recommended_change:
+    - "aaa new-model"
+    - "aaa authentication login default local"
+    - "aaa authorization exec default local"
+  before_you_apply:
+    - >-
+      A local user with `secret` and privilege 15 exists (`show running-config |
+      include ^username`). If not, create it first: `username <ADMIN_USER>
+      privilege 15 algorithm-type scrypt secret <NEW_PASSWORD>`. Entering an
+      existing name replaces that user's secret.
+    - >-
+      Lines with their own `login authentication <LIST>` keep working only if
+      that list is defined.
+    - "Console access is available as a fallback."
+    - "Run `reload in 10` before the change and `reload cancel` after a new login works."
+  notes:
+    - "`aaa new-model` takes effect at once on every line, the console included."
+  may_cut_access: true
+
+references:
+  stig:
+    - id: V-215824
+      stig_id: CISC-ND-000490
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AC-2]
+  cisco_guide: "Authentication, Authorization, and Accounting"
+  cisa: false
 
 examples:
   compliant:

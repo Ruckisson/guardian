@@ -12,7 +12,8 @@ VALID = {
     "scope": "global",
     "check": {"must_exist": "^hostname "},
     "rationale": "Because.",
-    "remediation": "Fix it.",
+    "remediation": {"recommended_change": ["no ip http server"], "before_you_apply": ["Check."]},
+    "references": {"stig": [], "nist_800_53": [], "cisco_guide": None, "cisa": False},
 }
 
 
@@ -123,8 +124,61 @@ def test_unknown_python_check() -> None:
     assert "unknown custom check 'nope'" in problems(check={"python": "nope"})
 
 
-def test_references_and_examples_types() -> None:
-    assert "references: must be a list" in problems(references="CIS 1.1")
+STIG = {
+    "id": "V-215813",
+    "stig_id": "CISC-ND-000150",
+    "benchmark": "Cisco IOS XE Router NDM V3R7",
+    "severity": "CAT II",
+    "relation": "satisfies",
+}
+
+
+def refs(**changes):
+    return {"stig": [], "nist_800_53": [], "cisco_guide": None, "cisa": False, **changes}
+
+
+def test_references_load() -> None:
+    rule = parse_rule(
+        {**VALID, "references": refs(stig=[STIG], nist_800_53=["AC-7", "IA-5(1)"], cisa=True)}
+    )
+
+    (stig,) = rule.references.stig
+    assert (stig.id, stig.stig_id, stig.severity, stig.relation) == (
+        "V-215813",
+        "CISC-ND-000150",
+        "CAT II",
+        "satisfies",
+    )
+    assert rule.references.nist_800_53 == ("AC-7", "IA-5(1)")
+    assert rule.references.cisco_guide is None
+    assert rule.references.cisa is True
+
+
+@pytest.mark.parametrize(
+    ("references", "message"),
+    [
+        (None, "references: missing required key"),
+        ("CIS 1.1", "references: must be a mapping"),
+        ({"stig": []}, "references.nist_800_53: missing required key"),
+        (refs(cis=["1.1"]), "references.cis: unknown key"),
+        (refs(stig="V-215813"), "references.stig: must be a list"),
+        (refs(stig=[{**STIG, "id": "V-21581"}]), "references.stig[0].id"),
+        (refs(stig=[{**STIG, "stig_id": "CISC-XX-000150"}]), "references.stig[0].stig_id"),
+        (refs(stig=[{**STIG, "severity": "CAT IV"}]), "must be CAT I, CAT II or CAT III"),
+        (refs(stig=[{**STIG, "relation": "maps"}]), "must be satisfies or related"),
+        (refs(stig=[{k: v for k, v in STIG.items() if k != "benchmark"}]), "benchmark: missing"),
+        (refs(stig=[{**STIG, "url": "x"}]), "references.stig[0].url: unknown key"),
+        (refs(nist_800_53=["AC7"]), "'AC7' must look like AC-7"),
+        (refs(nist_800_53=["ac-7"]), "'ac-7' must look like AC-7"),
+        (refs(cisco_guide=""), "references.cisco_guide: must be non-empty text"),
+        (refs(cisa="yes"), "references.cisa: must be true or false"),
+    ],
+)
+def test_invalid_references(references, message) -> None:
+    assert message in problems(references=references)
+
+
+def test_examples_types() -> None:
     assert "examples.compliant: must be a list" in problems(examples={"compliant": "x"})
     assert "examples.good: unknown key" in problems(examples={"good": ["x"]})
 
@@ -150,7 +204,14 @@ scope: global
 check:
   must_exist: "^hostname "
 rationale: Because.
-remediation: Fix it.
+remediation:
+  recommended_change: [hostname R1]
+  before_you_apply: [Check.]
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: null
+  cisa: false
 """
 
 

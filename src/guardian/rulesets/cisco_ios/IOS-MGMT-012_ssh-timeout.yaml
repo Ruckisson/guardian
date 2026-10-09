@@ -16,8 +16,17 @@ rationale: >
   the login stage. A short timeout frees VTY lines held by slow or idle
   connection attempts sooner.
 
-remediation: |
-  ip ssh time-out 60
+remediation:
+  recommended_change:
+    - "ip ssh time-out 60"
+  before_you_apply:
+    - "Nobody logs in over a link so slow that authentication takes more than a minute."
+
+references:
+  stig: []
+  nist_800_53: []
+  cisco_guide: "Encrypt Management Sessions"
+  cisa: false
 
 examples:
   compliant:

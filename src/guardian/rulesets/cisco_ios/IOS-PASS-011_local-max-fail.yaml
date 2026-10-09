@@ -1,35 +1,61 @@
 id: IOS-PASS-011
-title: Local accounts must lock after 5 or fewer failed logins
+title: Local accounts must lock after 3 or fewer failed logins
 severity: low
 
 scope: global
 
 check:
-  # "aaa local authentication attempts max-fail" must be 5 or less (IOS
-  # default: no limit). Without "aaa new-model" the command does not exist,
-  # so the rule does not apply; IOS-AAA-001 reports the missing AAA.
+  # "aaa local authentication attempts max-fail" must be 3 or less (DISA
+  # STIG; IOS default: no limit). Without "aaa new-model" the command does
+  # not exist, so the rule does not apply; IOS-AAA-001 reports the missing AAA.
   python: local-max-fail
 
 rationale: >
   Locks a local account after the given number of failed logins in a row, so
-  a password cannot be guessed against one user. Privilege 15 accounts are
-  never locked, so an administrator cannot lock everyone out. Needs
-  "aaa new-model". Some guides ask for 3.
+  a password cannot be guessed against one user. DISA STIG allows at most 3.
+  Needs "aaa new-model". A locked account stays locked until an
+  administrator unlocks it.
 
-remediation: |
-  aaa new-model
-  aaa local authentication attempts max-fail 3
+remediation:
+  recommended_change:
+    - "aaa local authentication attempts max-fail 3"
+  before_you_apply:
+    - >-
+      Know how to unlock: `show aaa local user lockout`, `clear aaa local user
+      lockout username <USERNAME>`.
+    - >-
+      Service accounts (config backups, NMS, automation) log in with the right
+      password and do not retry in a loop. A locked service account does not
+      unlock by itself, and backups then stop without anyone noticing.
+    - >-
+      Console access or another account is available. Cisco documents that
+      privilege 15 accounts are not locked; check it on your version.
+  notes:
+    - "Anyone who knows a user name can lock that account on purpose."
+  may_cut_access: true
+
+references:
+  stig:
+    - id: V-215813
+      stig_id: CISC-ND-000150
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AC-7]
+  cisco_guide: "Login Password Retry Lockout"
+  cisa: false
 
 examples:
   compliant:
     - |
       aaa new-model
       aaa local authentication attempts max-fail 3
+  not_applicable:
     - |
       no aaa new-model
   non_compliant:
     - |
       aaa new-model
-      aaa local authentication attempts max-fail 10
+      aaa local authentication attempts max-fail 5
     - |
       aaa new-model

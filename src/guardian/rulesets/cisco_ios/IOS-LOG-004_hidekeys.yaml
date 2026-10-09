@@ -13,10 +13,26 @@ rationale: >
   keys, and sends them to syslog. "hidekeys" masks them. Missing archive
   logging itself is reported by IOS-LOG-003.
 
-remediation: |
-  archive
-   log config
-    hidekeys
+remediation:
+  recommended_change:
+    - "archive"
+    - " log config"
+    - "  hidekeys"
+  before_you_apply:
+    - "`show running-config | section archive` shows the change logger is set up."
+
+applies_to: configuration change log (archive > log config)
+
+references:
+  stig:
+    - id: V-215819
+      stig_id: CISC-ND-000330
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: related
+  nist_800_53: [AU-3]
+  cisco_guide: "Configuration Change Notification and Logging"
+  cisa: false
 
 examples:
   compliant:
@@ -25,6 +41,7 @@ examples:
        log config
         logging enable
         hidekeys
+  not_applicable:
     - |
       hostname R1
   non_compliant:

@@ -1,34 +1,56 @@
 id: IOS-PASS-006
-title: Minimum password length must be at least 8 characters
+title: Minimum password length must be at least 15 characters
 severity: medium
 
 scope: global
 
 check:
-  # "security passwords min-length" must be 8 or more. Fails only when all
-  # passwords are hashed; with clear text or type 7 passwords IOS-PASS-007
-  # reports the same problem as high instead.
+  # "security passwords min-length" must be 15 or more (DISA STIG). Fails only
+  # when all passwords are hashed; with clear text or type 7 passwords
+  # IOS-PASS-007 reports the same problem as high instead.
   python: password-min-length-hashed
 
 rationale: >
   Short passwords can be guessed or brute forced quickly. This command makes
   IOS refuse new enable, user and line passwords shorter than the limit.
-  Without it IOS accepts any length, even a single character. Here the
-  passwords are at least stored as one-way hashes, so the risk is medium.
+  Without it IOS accepts any length, even a single character. DISA STIG asks
+  for at least 15 characters. Here the passwords are at least stored as
+  one-way hashes, so the risk is medium.
 
-remediation: |
-  security passwords min-length 12
+remediation:
+  recommended_change:
+    - "security passwords min-length 15"
+  before_you_apply:
+    - "Automation and NMS tools that set passwords use at least 15 characters."
+  notes:
+    - >-
+      The limit applies only to passwords set after the change. Existing
+      passwords are not checked; change the short ones.
+
+references:
+  stig:
+    - id: V-215826
+      stig_id: CISC-ND-000550
+      benchmark: Cisco IOS XE Router NDM V3R7
+      severity: CAT II
+      relation: satisfies
+  nist_800_53: []
+  cisco_guide: null
+  cisa: false
 
 examples:
   compliant:
     - |
-      security passwords min-length 8
+      security passwords min-length 15
       enable secret 9 $9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM
     - |
-      security passwords min-length 14
+      security passwords min-length 20
     - |
       enable password Cisco123
   non_compliant:
+    - |
+      security passwords min-length 12
+      enable secret 9 $9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM
     - |
       security passwords min-length 6
       enable secret 9 $9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM
